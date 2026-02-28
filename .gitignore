@@ -1,0 +1,19 @@
+# Impostazioni di PyCharm (JetBrains)
+.idea/
+
+# Se usi VS Code, ignora anche questa
+.vscode/
+
+# Cartelle di Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Database (spesso è meglio non caricarlo se contiene dati di test)
+*.sqlite3
+*.db
+
+# File di sistema
+.DS_Store
+Thumbs.db
