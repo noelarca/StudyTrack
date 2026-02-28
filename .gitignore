@@ -7,7 +7,7 @@
 # Cartelle di Python
 __pycache__/
 *.pyc
-venv/
+.venv/
 .env
 
 # Database (spesso è meglio non caricarlo se contiene dati di test)
