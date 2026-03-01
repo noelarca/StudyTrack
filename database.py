@@ -89,13 +89,6 @@ class Database:
         cursor.execute("SELECT id FROM subjects WHERE name = ?", (name,))
         result = cursor.fetchone()
         return result[0] if result else None
-
-    def get_subject_by_name(self, name: str):
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "SELECT id, name, semester, year, credits, notes "
-            "FROM subjects WHERE name = ?", (name,))
-        return cursor.fetchone()
     
     def get_all_subjects(self):
         cursor = self.conn.cursor()
@@ -115,3 +108,22 @@ class Database:
             LIMIT ?
         """, (limit,))
         return cursor.fetchall()
+    
+    def get_subject_by_name(self, name: str):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT id, name, semester, year, credits, notes "
+            "FROM subjects WHERE name = ?", (name,))
+        return cursor.fetchone()
+
+    def get_subject_minor_stats(self, name: str):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT 
+                IFNULL(SUM((julianday(end_time) - julianday(start_time)) * 24.0), 0) AS total_hours,
+                IFNULL(AVG(quality), 0) AS avg_quality
+            FROM study_sessions ss
+            JOIN subjects s ON ss.subject_id = s.id
+            WHERE s.name = ?
+        """, (name,))
+        return cursor.fetchone()

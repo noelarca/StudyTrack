@@ -22,4 +22,5 @@ class StudyRepository:
         return self.database.get_last_entries(limit)
 
     def get_subject_details(self, name: str):
-        return self.database.get_subject_by_name(name)
+        details = self.database.get_subject_by_name(name) + self.database.get_subject_minor_stats(name)
+        return details

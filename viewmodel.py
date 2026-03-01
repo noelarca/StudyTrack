@@ -120,7 +120,8 @@ class ViewModel(QObject):
         self.selected_subject = subject
 
     def get_subject_details(self, subject: str) -> dict:
-        """Return a dictionary of properties for the given subject.
+        """
+        Return a dictionary of properties for the given subject.
 
         The repository is expected to return a row/tuple; convert it to a dict
         so that the view layer can iterate over ``items()``.
@@ -131,7 +132,7 @@ class ViewModel(QObject):
                 return {}
             # depending on repository implementation the row may contain
             # (id, name, semester, year, credits, notes) or similar
-            keys = ["id", "name", "semester", "year", "credits", "notes"]
+            keys = ["id", "name", "semester", "year", "credits", "notes", "total_hours", "avg_quality"]
             return {k: v for k, v in zip(keys, row)}
         except Exception as e:
             raise ValueError(f"An error occurred while fetching subject details: {e}")
