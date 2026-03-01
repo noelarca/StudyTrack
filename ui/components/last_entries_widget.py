@@ -45,7 +45,7 @@ class LastEntriesWidget(QWidget):
             self.table.setItem(i, 0, QTableWidgetItem(str(entry[0])))  # ID
             self.table.setItem(i, 1, QTableWidgetItem(entry[1]))       # Materia
             self.table.setItem(i, 2, QTableWidgetItem(entry[2]))       # Data
-            self.table.setItem(i, 3, QTableWidgetItem(str(entry[3]))) # Durata (min)
+            self.table.setItem(i, 3, QTableWidgetItem(str(round(entry[3], 2)))) # Durata (min)
             self.table.setItem(i, 4, QTableWidgetItem(str(entry[4]))) # Qualità
             self.table.setItem(i, 5, QTableWidgetItem(entry[5]))       # Note
 
