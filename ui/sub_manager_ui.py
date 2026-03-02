@@ -3,9 +3,6 @@ from PySide6.QtWidgets import (
 )
 from ui.components.sub_sidebar import SubSidebar
 from ui.components.sub_details import SubDetails
-from ui.components.new_sub_window import NewSubjectWindow
-
-from PySide6.QtCore import Signal
 
 class SubManager(QWidget):
     def __init__(self, viewmodel=None):
@@ -16,7 +13,8 @@ class SubManager(QWidget):
         selector = SubSidebar(viewmodel=self.viewmodel)
         details = SubDetails(viewmodel=self.viewmodel)
 
-        selector.subject_selected.connect(details.load_details)
+        # When a subject is selected in the sidebar, set the details' subject (invokes the setter)
+        selector.subject_selected.connect(lambda s: setattr(details, 'subject', s))
         
         self.layout.addWidget(selector)
         self.layout.addWidget(details)

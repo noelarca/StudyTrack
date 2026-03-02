@@ -127,3 +127,26 @@ class Database:
             WHERE s.name = ?
         """, (name,))
         return cursor.fetchone()
+    
+    def modify_subject(self, subject_id: int, name: str, semester: int, year: int, credits: int, notes: str):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE subjects 
+            SET name = ?, semester = ?, year = ?, credits = ?, notes = ?
+            WHERE id = ?
+        """, (name, semester, year, credits, notes, subject_id))
+        self.conn.commit()
+    
+    def delete_subject(self, subject_id: int):
+        cursor = self.conn.cursor()
+        # first delete related study sessions to maintain referential integrity
+        cursor.execute("DELETE FROM study_sessions WHERE subject_id = ?", (subject_id,))
+        # then delete the subject itself
+        cursor.execute("DELETE FROM subjects WHERE id = ?", (subject_id,))
+        self.conn.commit()
+
+    def get_subID_by_name(self, name: str) -> int | None:
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT id FROM subjects WHERE name = ?", (name,))
+        result = cursor.fetchone()
+        return result[0] if result else None

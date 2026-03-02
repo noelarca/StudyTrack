@@ -136,3 +136,25 @@ class ViewModel(QObject):
             return {k: v for k, v in zip(keys, row)}
         except Exception as e:
             raise ValueError(f"An error occurred while fetching subject details: {e}")
+        
+    def update_subject(self, subject_id: int, name: str, semester: int, year: int, credits: int, notes: str):
+        try:
+            self.repository.modify_subject(subject_id, name, semester, year, credits, notes)
+            # notify UI listeners
+            self.subjects_changed.emit()
+        except Exception as e:
+            raise ValueError(f"An error occurred while updating the subject: {e}")
+    
+    def delete_subject(self, subject_id: int):
+        try:
+            self.repository.delete_subject(subject_id)
+            # notify UI listeners
+            self.subjects_changed.emit()
+        except Exception as e:
+            raise ValueError(f"An error occurred while deleting the subject: {e}")
+    
+    def get_subject_id_by_name(self, name: str) -> int | None:
+        try:
+            return self.repository.get_subID_by_name(name)
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching subject ID: {e}")   

@@ -24,3 +24,12 @@ class StudyRepository:
     def get_subject_details(self, name: str):
         details = self.database.get_subject_by_name(name) + self.database.get_subject_minor_stats(name)
         return details
+    
+    def modify_subject(self, subject_id: int, name: str, semester: int, year: int, credits: int, notes: str):
+        self.database.modify_subject(subject_id, name, semester, year, credits, notes)
+
+    def delete_subject(self, subject_id: int):
+        self.database.delete_subject(subject_id)
+
+    def get_subID_by_name(self, name: str) -> int | None:
+        return self.database.get_subject_id_by_name(name)
