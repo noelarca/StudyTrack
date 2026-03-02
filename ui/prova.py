@@ -1,31 +1,29 @@
 import sys
-from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout,
-    QTabWidget, QLabel
-)
+from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtCharts import QChart, QChartView, QLineSeries
+from PySide6.QtCore import QPointF
+from PySide6.QtGui import QPainter
 
 app = QApplication(sys.argv)
 
-window = QWidget()
-layout = QVBoxLayout(window)
+series = QLineSeries()
+series.append(0, 6)
+series.append(2, 4)
+series.append(3, 8)
+series.append(7, 4)
+series.append(10, 5)
 
-tabs = QTabWidget()
+chart = QChart()
+chart.addSeries(series)
+chart.createDefaultAxes()
+chart.setTitle("Simple Line Chart")
 
-# First tab
-tab1 = QWidget()
-tab1_layout = QVBoxLayout(tab1)
-tab1_layout.addWidget(QLabel("Content of Tab 1"))
+chart_view = QChartView(chart)
+chart_view.setRenderHint(QPainter.Antialiasing)
 
-# Second tab
-tab2 = QWidget()
-tab2_layout = QVBoxLayout(tab2)
-tab2_layout.addWidget(QLabel("Content of Tab 2"))
-
-# Add tabs
-tabs.addTab(tab1, "Tab 1")
-tabs.addTab(tab2, "Tab 2")
-
-layout.addWidget(tabs)
-
+window = QMainWindow()
+window.setCentralWidget(chart_view)
+window.resize(600, 400)
 window.show()
+
 sys.exit(app.exec())

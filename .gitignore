@@ -17,3 +17,6 @@ __pycache__/
 # File di sistema
 .DS_Store
 Thumbs.db
+
+# Prova
+prova.py
