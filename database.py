@@ -145,8 +145,33 @@ class Database:
         cursor.execute("DELETE FROM subjects WHERE id = ?", (subject_id,))
         self.conn.commit()
 
+    def delete_study_session(self, session_id: int):
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM study_sessions WHERE id = ?", (session_id,))
+        self.conn.commit()
+
     def get_subID_by_name(self, name: str) -> int | None:
         cursor = self.conn.cursor()
         cursor.execute("SELECT id FROM subjects WHERE name = ?", (name,))
         result = cursor.fetchone()
         return result[0] if result else None
+    
+    def get_entry_by_id(self, entry_id:int) -> tuple:
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT id, subject_id, date, start_time, end_time, quality, notes
+            FROM study_sessions WHERE id = ?
+        """, (entry_id,))                       
+        return cursor.fetchone()
+
+    def get_subject_stats_over_time(self, name: str, days=7):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT ss.date, SUM(ss.duration_hours)
+            FROM study_sessions ss
+            JOIN subjects s ON ss.subject_id = s.id
+            WHERE s.name = ? AND ss.date >= date('now', ?)
+            GROUP BY ss.date
+            ORDER BY ss.date ASC
+        """, (name, f"-{days} days"))
+        return cursor.fetchall()

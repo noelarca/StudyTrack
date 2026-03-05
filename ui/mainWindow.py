@@ -17,9 +17,11 @@ class MainWindow(QWidget):
         self.tabs = QTabWidget()
         self.entryTab = EntryWidget(viewmodel=self.viewmodel)
         self.subManagerTab = SubManager(viewmodel=self.viewmodel)
+        self.taskManagerTab = QWidget()  # Placeholder per il futuro Task Manager
         
 
         self.tabs.addTab(self.entryTab, "Nuova sessione")
         self.tabs.addTab(self.subManagerTab, "Gestione materie")
+        self.tabs.addTab(self.taskManagerTab, "Gestione attività")  # Placeholder
 
         self.layout.addWidget(self.tabs)

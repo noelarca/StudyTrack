@@ -1,7 +1,5 @@
 # ui/components/stopwatch_widget.py
-
-import sys
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QApplication
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
 from PySide6.QtCore import QTimer, QTime, Qt, Signal
 
 class StopwatchWidget(QWidget):
@@ -46,7 +44,15 @@ class StopwatchWidget(QWidget):
         """)
         self.toggle_btn.clicked.connect(self.toggle_timer)
 
+        self.reset_btn = QPushButton("RESET")
+        self.reset_btn.setStyleSheet("""
+            QPushButton { background-color: #7f8c8d; color: white; font-weight: bold; padding: 10px; }
+            QPushButton:hover { background-color: #95a5a6; }
+        """)
+        self.reset_btn.clicked.connect(self.reset_timer)
+
         btn_layout.addWidget(self.toggle_btn)
+        btn_layout.addWidget(self.reset_btn)
 
         layout.addWidget(self.time_display)
         layout.addLayout(btn_layout)
@@ -58,6 +64,7 @@ class StopwatchWidget(QWidget):
             self.start_time = QTime.currentTime() # Registra l'ora esatta di inizio
             self.toggle_btn.setText("FERMA E SALVA")
             self.elapsed_seconds = 0
+            self.time_display.setText("00:00:00")
             self.timer.start(1000) # Scatta ogni 1 secondo
         else:
             # --- STOP ---
@@ -70,6 +77,15 @@ class StopwatchWidget(QWidget):
             if self.start_time:
                 self.session_finished.emit(self.start_time, end_time)
 
+    def reset_timer(self):
+        self.is_running = False
+        self.timer.stop()
+        self.elapsed_seconds = 0
+        self.time_display.setText("00:00:00")
+        self.start_time = None
+        self.toggle_btn.setChecked(False)
+        self.toggle_btn.setText("AVVIA SESSIONE")
+
     def update_display(self):
         self.elapsed_seconds += 1
         # Formattazione manuale HH:MM:SS
@@ -77,9 +93,3 @@ class StopwatchWidget(QWidget):
         mins = (self.elapsed_seconds % 3600) // 60
         secs = self.elapsed_seconds % 60
         self.time_display.setText(f"{hours:02}:{mins:02}:{secs:02}")
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = StopwatchWidget()
-    window.show()
-    sys.exit(app.exec())

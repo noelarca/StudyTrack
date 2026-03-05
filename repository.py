@@ -31,5 +31,20 @@ class StudyRepository:
     def delete_subject(self, subject_id: int):
         self.database.delete_subject(subject_id)
 
+    def delete_entry(self, entry_id: int):
+        self.database.delete_study_session(entry_id)
+
     def get_subID_by_name(self, name: str) -> int | None:
         return self.database.get_subject_id_by_name(name)
+    
+    def get_entry_by_id(self, entry_id: int) -> tuple:
+        return self.database.get_entry_by_id(entry_id)
+    
+    def modify_entry(self, entry_id: int, subject: str, date: str, start_time: str, end_time: str, notes: str, quality: int):
+        subject_id = self.get_subID_by_name(subject)
+        if subject_id is None:
+            raise ValueError("Subject does not exist.")
+        self.database.modify_entry(entry_id, subject_id, date, start_time, end_time, notes, quality)
+
+    def get_subject_stats_over_time(self, name: str, days=7):
+        return self.database.get_subject_stats_over_time(name, days)

@@ -38,8 +38,9 @@ class ViewModel(QObject):
 
             subject_id = self.repository.get_subID_by_name(subject)
             # store times as full timestamp strings (date + time) for reliable julianday calculations
-            start_ts = f"{date} {start_time}:00"
-            end_ts = f"{date} {end_time}:00"
+            # Assume start_time and end_time now include seconds (HH:mm:ss)
+            start_ts = f"{date} {start_time}"
+            end_ts = f"{date} {end_time}"
 
             session = StudySession(
                 id=None,
@@ -56,7 +57,7 @@ class ViewModel(QObject):
             self.entries_changed.emit()
 
         except ValueError as e:
-            raise ValueError(f"Format must be HH:MM. Error: {e}")
+            raise ValueError(f"Format must be HH:mm:ss. Error: {e}")
         except Exception as e:
             raise ValueError(f"An error occurred while saving entry: {e}")
 
@@ -153,8 +154,53 @@ class ViewModel(QObject):
         except Exception as e:
             raise ValueError(f"An error occurred while deleting the subject: {e}")
     
+    def delete_entry(self, entry_id: int):
+        try:
+            self.repository.delete_entry(entry_id)
+            # notify UI listeners
+            self.entries_changed.emit()
+        except Exception as e:
+            raise ValueError(f"An error occurred while deleting the entry: {e}")
+    
     def get_subject_id_by_name(self, name: str) -> int | None:
         try:
             return self.repository.get_subID_by_name(name)
         except Exception as e:
-            raise ValueError(f"An error occurred while fetching subject ID: {e}")   
+            raise ValueError(f"An error occurred while fetching subject ID: {e}")
+        
+    def get_entry_by_id(self, entry_id: int) -> dict:
+        try:
+            row = self.repository.get_entry_by_id(entry_id)
+            if not row:
+                return {}
+            keys = ["id", "subject_id", "date", "start_time", "end_time", "quality", "notes"]
+            return {k: v for k, v in zip(keys, row)}
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching entry details: {e}")
+        
+    def modify_entry(self, entry_id: int, subject: str, date: str, start_time: str, end_time: str, notes: str, quality: int):
+        try:
+            subject_id = self.get_subject_id_by_name(subject)
+            if subject_id is None:
+                raise ValueError("Subject does not exist.")
+            from database import StudySession
+            session = StudySession(
+                id=entry_id,
+                subject_id=subject_id,
+                date=date,
+                start_time=f"{date} {start_time}",
+                end_time=f"{date} {end_time}",
+                quality=quality,
+                notes=notes
+            )
+            self.repository.modify_entry(entry_id, subject, date, start_time, end_time, notes, quality)
+            # notify UI listeners
+            self.entries_changed.emit()
+        except Exception as e:
+            raise ValueError(f"An error occurred while modifying the entry: {e}")
+
+    def get_subject_stats_over_time(self, name: str, days=7):
+        try:
+            return self.repository.get_subject_stats_over_time(name, days)
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching stats: {e}")
