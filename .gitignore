@@ -18,6 +18,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Prova
+# File di log
 prova.py
 seed_db.py
+GEMINI.md
