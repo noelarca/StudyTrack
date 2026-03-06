@@ -6,13 +6,13 @@ class EntryWidgetBox(QGroupBox):
     def __init__(self, title="Nuovo Inserimento", parent=None, viewmodel=None):
         super().__init__(title, parent)
         self.viewmodel = viewmodel
-        self.isEditing = False  # Flag per distinguere tra creazione e modifica
+        self.is_editing = False  # Flag per distinguere tra creazione e modifica
         self.editing_entry_id = None  # Per tenere traccia dell'ID dell'entry in fase di modifica
         
         self.setup_ui()
 
     def setup_ui(self):
-        self.layoutWidget = QFormLayout()
+        self.layout = QFormLayout()
         
         # Selettore della materia
         self.subject_selector = QComboBox()
@@ -61,15 +61,15 @@ class EntryWidgetBox(QGroupBox):
         btn_layout.addWidget(self.reset_btn)
 
         # Aggiunta dei widget al layout
-        self.layoutWidget.addRow("Materia:", self.subject_selector)
-        self.layoutWidget.addRow("Ora Inizio:", self.time_edit_1)
-        self.layoutWidget.addRow("Ora Fine:", self.time_edit_2)
-        self.layoutWidget.addRow("Data:", self.date_edit)
-        self.layoutWidget.addRow("Qualità (1-5):", self.selector)
-        self.layoutWidget.addRow("Note:", self.notes_edit)
-        self.layoutWidget.addRow(btn_layout)
+        self.layout.addRow("Materia:", self.subject_selector)
+        self.layout.addRow("Ora Inizio:", self.time_edit_1)
+        self.layout.addRow("Ora Fine:", self.time_edit_2)
+        self.layout.addRow("Data:", self.date_edit)
+        self.layout.addRow("Qualità (1-5):", self.selector)
+        self.layout.addRow("Note:", self.notes_edit)
+        self.layout.addRow(btn_layout)
 
-        self.setLayout(self.layoutWidget)
+        self.setLayout(self.layout)
 
     def load_subjects(self):
         self.subject_selector.clear()
@@ -89,7 +89,7 @@ class EntryWidgetBox(QGroupBox):
 
     def load_entry_for_editing(self, entry_data):
         """Carica i dati di un'entry esistente per la modifica."""
-        self.isEditing = True
+        self.is_editing = True
         self.editing_entry_id = entry_data['id']
         self.setTitle(f"Modifica Inserimento (ID: {self.editing_entry_id})")
         
@@ -124,7 +124,7 @@ class EntryWidgetBox(QGroupBox):
 
     def reset_form(self):
         """Resetta il form allo stato di nuovo inserimento."""
-        self.isEditing = False
+        self.is_editing = False
         self.editing_entry_id = None
         self.setTitle("Nuovo Inserimento")
         self.button.setText("Salva Sessione")
@@ -144,7 +144,7 @@ class EntryWidgetBox(QGroupBox):
             return
 
         try:
-            if not self.isEditing:
+            if not self.is_editing:
                 self.viewmodel.add_entry(
                     subject=subject,
                     date=self.date_edit.date().toString("yyyy-MM-dd"),
@@ -186,5 +186,6 @@ class EditEntryDialog(QDialog):
         self.entry_box.button.clicked.connect(self.check_if_done)
 
     def check_if_done(self):
-        if not self.entry_box.isEditing:
+        if not self.entry_box.is_editing:
             self.accept()
+

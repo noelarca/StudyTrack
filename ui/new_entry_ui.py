@@ -15,13 +15,13 @@ class EntryWidget(QWidget):
         self.setWindowTitle("Study Tracker")
         self.resize(400, 300)
 
-        toplayout = QHBoxLayout()
-        mainLayout = QVBoxLayout()
+        top_layout = QHBoxLayout()
+        main_layout = QVBoxLayout()
 
         # --- INTEGRAZIONE DEL CRONOMETRO ---
         
         self.stopwatch = StopwatchWidget()
-        toplayout.addWidget(self.stopwatch)
+        top_layout.addWidget(self.stopwatch)
         self.stopwatch.session_finished.connect(self.handle_session_finished)
 
         # --- INTEGRAZIONE DEL WIDGET BOX ---
@@ -31,9 +31,9 @@ class EntryWidget(QWidget):
         self.study_entry_box.setMaximumWidth(400)  # Imposta una larghezza massima per il widget
 
         # Aggiungiamo il widget al layout della finestra principale
-        toplayout.addWidget(self.study_entry_box)
+        top_layout.addWidget(self.study_entry_box)
 
-        mainLayout.addLayout(toplayout)
+        main_layout.addLayout(top_layout)
 
         # --- INTEGRAZIONE DEL WIDGET DELLE ULTIME ENTRIES ---
         self.last_entries_widget = LastEntriesWidget(viewmodel=self.viewmodel)
@@ -43,9 +43,9 @@ class EntryWidget(QWidget):
 
         self.last_entries_widget.edit_entry_requested.connect(self.handle_edit_entry)  # Connetti il segnale di richiesta di modifica
 
-        mainLayout.addWidget(self.last_entries_widget)
+        main_layout.addWidget(self.last_entries_widget)
 
-        self.setLayout(mainLayout)
+        self.setLayout(main_layout)
     
     def handle_session_finished(self, start_time, end_time):
         # Aggiorna i campi dell'EntryWidgetBox con i tempi del cronometro

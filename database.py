@@ -75,7 +75,7 @@ class Database:
             self.conn.commit()
             return cursor.lastrowid
         
-    def add_study_session(self, session: StudySession) -> int:
+    def add_entry(self, session: StudySession) -> int:
         cursor = self.conn.cursor()
         cursor.execute("""
             INSERT INTO study_sessions (subject_id, date, start_time, end_time, quality, notes) 
@@ -136,6 +136,15 @@ class Database:
             WHERE id = ?
         """, (name, semester, year, credits, notes, subject_id))
         self.conn.commit()
+
+    def modify_entry(self, entry_id: int, subject_id: int, date: str, start_time: str, end_time: str, notes: str, quality: int):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE study_sessions 
+            SET subject_id = ?, date = ?, start_time = ?, end_time = ?, notes = ?, quality = ?
+            WHERE id = ?
+        """, (subject_id, date, start_time, end_time, notes, quality, entry_id))
+        self.conn.commit()
     
     def delete_subject(self, subject_id: int):
         cursor = self.conn.cursor()
@@ -145,17 +154,11 @@ class Database:
         cursor.execute("DELETE FROM subjects WHERE id = ?", (subject_id,))
         self.conn.commit()
 
-    def delete_study_session(self, session_id: int):
+    def delete_entry(self, entry_id: int):
         cursor = self.conn.cursor()
-        cursor.execute("DELETE FROM study_sessions WHERE id = ?", (session_id,))
+        cursor.execute("DELETE FROM study_sessions WHERE id = ?", (entry_id,))
         self.conn.commit()
 
-    def get_subID_by_name(self, name: str) -> int | None:
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT id FROM subjects WHERE name = ?", (name,))
-        result = cursor.fetchone()
-        return result[0] if result else None
-    
     def get_entry_by_id(self, entry_id:int) -> tuple:
         cursor = self.conn.cursor()
         cursor.execute("""

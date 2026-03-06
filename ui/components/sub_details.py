@@ -166,7 +166,7 @@ class SubDetails(QWidget):
 
     def delete_subject(self):
         name = self.current_subject.get("name") if isinstance(self.current_subject, dict) else self.current_subject
-        self.subject_id = self.viewmodel.get_subID_by_name(name) if name else None
+        self.subject_id = self.viewmodel.get_subject_id_by_name(name) if name else None
         if self.subject_id is None:
             return
         else:

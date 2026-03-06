@@ -1,6 +1,6 @@
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal
-
+from database import Subject, StudySession
 
 class ViewModel(QObject):
     subjects_changed = Signal()
@@ -34,9 +34,7 @@ class ViewModel(QObject):
         
         # Creazione del dizionario del soggetto e chiamata al repository
         try:
-            from database import StudySession
-
-            subject_id = self.repository.get_subID_by_name(subject)
+            subject_id = self.repository.get_subject_id_by_name(subject)
             # store times as full timestamp strings (date + time) for reliable julianday calculations
             # Assume start_time and end_time now include seconds (HH:mm:ss)
             start_ts = f"{date} {start_time}"
@@ -75,8 +73,6 @@ class ViewModel(QObject):
         
         # Creazione del Subject dataclass e chiamata al repository
         try:
-            from database import Subject
-
             subj = Subject(
                 id=None,
                 name=name,
@@ -164,7 +160,7 @@ class ViewModel(QObject):
     
     def get_subject_id_by_name(self, name: str) -> int | None:
         try:
-            return self.repository.get_subID_by_name(name)
+            return self.repository.get_subject_id_by_name(name)
         except Exception as e:
             raise ValueError(f"An error occurred while fetching subject ID: {e}")
         
@@ -183,16 +179,7 @@ class ViewModel(QObject):
             subject_id = self.get_subject_id_by_name(subject)
             if subject_id is None:
                 raise ValueError("Subject does not exist.")
-            from database import StudySession
-            session = StudySession(
-                id=entry_id,
-                subject_id=subject_id,
-                date=date,
-                start_time=f"{date} {start_time}",
-                end_time=f"{date} {end_time}",
-                quality=quality,
-                notes=notes
-            )
+            
             self.repository.modify_entry(entry_id, subject, date, start_time, end_time, notes, quality)
             # notify UI listeners
             self.entries_changed.emit()
