@@ -20,6 +20,16 @@ class Subject:
     credits: int = 0
     notes: str = ""
 
+@dataclass
+class Task:
+    id: int | None
+    subject_id: int
+    title: str
+    description: str = ""
+    due_date: str | None = None
+    priority: int = 2  # 1: Low, 2: Medium, 3: High
+    is_completed: bool = False
+
 class Database:
     def __init__(self, db_name="study_tracker.db"):
         self.conn = sqlite3.connect(db_name)
@@ -30,15 +40,11 @@ class Database:
         # migrate subjects table if schema is outdated
         cursor.execute("PRAGMA table_info(subjects)")
         cols = [row[1] for row in cursor.fetchall()]
-        # if the existing subjects table is missing any of the current columns
-        # (semester, year or credits) we drop it and rebuild. this is a simple
-        # migration strategy acceptable for a small local app.
         if cols and ("year" not in cols or "semester" not in cols or "credits" not in cols):
-            # drop old version, we'll recreate with the new design
             cursor.execute("DROP TABLE IF EXISTS subjects")
             cols = []
 
-        # create subjects table if missing or recreated above
+        # create subjects table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS subjects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,11 +70,29 @@ class Database:
                 FOREIGN KEY (subject_id) REFERENCES subjects(id)
             )
         """)
+
+        # Migration/Creation for tasks table
+        cursor.execute("PRAGMA table_info(tasks)")
+        task_cols = [row[1] for row in cursor.fetchall()]
+        if task_cols and ("due_date" not in task_cols or "priority" not in task_cols):
+            cursor.execute("DROP TABLE IF EXISTS tasks")
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                subject_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                due_date TEXT,
+                priority INTEGER DEFAULT 2,
+                is_completed INTEGER DEFAULT 0,
+                FOREIGN KEY (subject_id) REFERENCES subjects(id)
+            )
+        """)
         self.conn.commit()
 
     def add_subject(self, subject: Subject) -> int:
             cursor = self.conn.cursor()
-            # schema is (name, semester, year, credits, notes)
             cursor.execute("""
                 INSERT INTO subjects (name, semester, year, credits, notes) VALUES (?, ?, ?, ?, ?)
             """, (subject.name, subject.semester, subject.year, subject.credits, subject.notes))
@@ -92,7 +116,6 @@ class Database:
     
     def get_all_subjects(self):
         cursor = self.conn.cursor()
-        # return id, name and credits so callers can have more context if needed
         cursor.execute("SELECT id, name, credits FROM subjects")
         return cursor.fetchall()
     
@@ -148,9 +171,8 @@ class Database:
     
     def delete_subject(self, subject_id: int):
         cursor = self.conn.cursor()
-        # first delete related study sessions to maintain referential integrity
         cursor.execute("DELETE FROM study_sessions WHERE subject_id = ?", (subject_id,))
-        # then delete the subject itself
+        cursor.execute("DELETE FROM tasks WHERE subject_id = ?", (subject_id,))
         cursor.execute("DELETE FROM subjects WHERE id = ?", (subject_id,))
         self.conn.commit()
 
@@ -178,3 +200,66 @@ class Database:
             ORDER BY ss.date ASC
         """, (name, f"-{days} days"))
         return cursor.fetchall()
+
+    def get_daily_stats(self, days=365):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT date, SUM(duration_hours)
+            FROM study_sessions
+            WHERE date >= date('now', ?)
+            GROUP BY date
+            ORDER BY date ASC
+        """, (f"-{days} days",))
+        return cursor.fetchall()
+
+    def get_entries_by_date(self, date_str: str):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT ss.id, s.name, ss.start_time, ss.end_time, ss.quality, ss.notes
+            FROM study_sessions ss
+            JOIN subjects s ON ss.subject_id = s.id
+            WHERE ss.date = ?
+            ORDER BY ss.start_time ASC
+        """, (date_str,))
+        return cursor.fetchall()
+
+    # --- TASK METHODS ---
+    def add_task(self, task: Task) -> int:
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO tasks (subject_id, title, description, due_date, priority, is_completed)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (task.subject_id, task.title, task.description, task.due_date, task.priority, 1 if task.is_completed else 0))
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def get_tasks_by_subject(self, subject_id: int):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT id, subject_id, title, description, due_date, priority, is_completed
+            FROM tasks WHERE subject_id = ?
+            ORDER BY priority DESC, due_date ASC
+        """, (subject_id,))
+        return cursor.fetchall()
+
+    def get_all_tasks(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT t.id, s.name, t.title, t.description, t.due_date, t.priority, t.is_completed
+            FROM tasks t
+            JOIN subjects s ON t.subject_id = s.id
+            ORDER BY t.is_completed ASC, t.priority DESC, t.due_date ASC
+        """)
+        return cursor.fetchall()
+
+    def update_task_status(self, task_id: int, is_completed: bool):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE tasks SET is_completed = ? WHERE id = ?
+        """, (1 if is_completed else 0, task_id))
+        self.conn.commit()
+
+    def delete_task(self, task_id: int):
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        self.conn.commit()

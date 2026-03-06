@@ -1,10 +1,11 @@
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal
-from database import Subject, StudySession
+from database import Subject, StudySession, Task
 
 class ViewModel(QObject):
     subjects_changed = Signal()
     entries_changed = Signal()
+    tasks_changed = Signal()
 
     def __init__(self, repository):
         super().__init__()
@@ -191,3 +192,69 @@ class ViewModel(QObject):
             return self.repository.get_subject_stats_over_time(name, days)
         except Exception as e:
             raise ValueError(f"An error occurred while fetching stats: {e}")
+
+    def get_daily_stats(self, days=365):
+        try:
+            return self.repository.database.get_daily_stats(days)
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching daily stats: {e}")
+
+    def get_entries_by_date(self, date_str: str):
+        try:
+            rows = self.repository.get_entries_by_date(date_str)
+            keys = ["id", "subject_name", "start_time", "end_time", "quality", "notes"]
+            return [{k: v for k, v in zip(keys, row)} for row in rows]
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching entries for date: {e}")
+
+    # --- TASK METHODS ---
+    def add_task(self, subject_name, title, description="", due_date=None, priority=2):
+        if not title:
+            raise ValueError("Task title cannot be empty.")
+        
+        subject_id = self.get_subject_id_by_name(subject_name)
+        if not subject_id:
+            raise ValueError("Subject does not exist.")
+
+        try:
+            task = Task(
+                id=None, 
+                subject_id=subject_id, 
+                title=title, 
+                description=description,
+                due_date=due_date,
+                priority=priority
+            )
+            self.repository.add_task(task)
+            self.tasks_changed.emit()
+        except Exception as e:
+            raise ValueError(f"An error occurred while adding the task: {e}")
+
+    def get_tasks_by_subject(self, subject_name):
+        subject_id = self.get_subject_id_by_name(subject_name)
+        if not subject_id:
+            return []
+        try:
+            return self.repository.get_tasks_by_subject(subject_id)
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching tasks: {e}")
+
+    def get_all_tasks(self):
+        try:
+            return self.repository.get_all_tasks()
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching all tasks: {e}")
+
+    def toggle_task_completion(self, task_id, is_completed):
+        try:
+            self.repository.update_task_status(task_id, is_completed)
+            self.tasks_changed.emit()
+        except Exception as e:
+            raise ValueError(f"An error occurred while updating task: {e}")
+
+    def delete_task(self, task_id):
+        try:
+            self.repository.delete_task(task_id)
+            self.tasks_changed.emit()
+        except Exception as e:
+            raise ValueError(f"An error occurred while deleting task: {e}")

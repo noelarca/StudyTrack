@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
 
 from ui.sub_manager_ui import SubManager
 from ui.new_entry_ui import EntryWidget
+from ui.task_manager_ui import TaskManager
+from ui.calendar_ui import CalendarUI
 
 class MainWindow(QWidget):
     def __init__(self, viewmodel):
@@ -13,15 +15,17 @@ class MainWindow(QWidget):
         self.setWindowTitle("Studio Tracker")
 
         self.layout = QHBoxLayout(self)
-        
+
         self.tabs = QTabWidget()
         self.entryTab = EntryWidget(viewmodel=self.viewmodel)
         self.subManagerTab = SubManager(viewmodel=self.viewmodel)
-        self.taskManagerTab = QWidget()  # Placeholder per il futuro Task Manager
-        
+        self.taskManagerTab = TaskManager(viewmodel=self.viewmodel)
+        self.calendarTab = CalendarUI(viewmodel=self.viewmodel)
+
 
         self.tabs.addTab(self.entryTab, "Nuova sessione")
         self.tabs.addTab(self.subManagerTab, "Gestione materie")
-        self.tabs.addTab(self.taskManagerTab, "Gestione attività")  # Placeholder
+        self.tabs.addTab(self.taskManagerTab, "Gestione attività")
+        self.tabs.addTab(self.calendarTab, "Calendario")
 
         self.layout.addWidget(self.tabs)

@@ -1,4 +1,4 @@
-from database import Database, Subject, StudySession
+from database import Database, Subject, StudySession, Task
 
 class StudyRepository:
     def __init__(self, database: Database):
@@ -44,3 +44,22 @@ class StudyRepository:
 
     def get_subject_stats_over_time(self, name: str, days=7):
         return self.database.get_subject_stats_over_time(name, days)
+
+    def get_entries_by_date(self, date_str: str):
+        return self.database.get_entries_by_date(date_str)
+
+    # --- TASK METHODS ---
+    def add_task(self, task: Task) -> int:
+        return self.database.add_task(task)
+
+    def get_tasks_by_subject(self, subject_id: int):
+        return self.database.get_tasks_by_subject(subject_id)
+
+    def get_all_tasks(self):
+        return self.database.get_all_tasks()
+
+    def update_task_status(self, task_id: int, is_completed: bool):
+        self.database.update_task_status(task_id, is_completed)
+
+    def delete_task(self, task_id: int):
+        self.database.delete_task(task_id)
