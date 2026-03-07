@@ -3,17 +3,42 @@ from PySide6.QtCore import QObject, Signal
 from database import Subject, StudySession, Task
 
 class ViewModel(QObject):
+    """
+    The ViewModel acts as the intermediary between the UI (View) and the Repository.
+    It handles business logic, data validation, and provides signals to notify
+    the UI of changes in the underlying data.
+    """
+    # Signals to notify the UI when data changes
     subjects_changed = Signal()
     entries_changed = Signal()
     tasks_changed = Signal()
 
     def __init__(self, repository):
+        """
+        Initializes the ViewModel with a repository instance.
+        
+        Args:
+            repository (StudyRepository): The repository instance for data operations.
+        """
         super().__init__()
         self.repository = repository
 
     def add_entry(self, subject, date, start_time, end_time, notes, quality=3):
-
-        # Controlli di validità dei dati
+        """
+        Validates and adds a new study session entry.
+        
+        Args:
+            subject (str): Name of the subject.
+            date (str): Date of the session (YYYY-MM-DD).
+            start_time (str): Start time (HH:mm:ss).
+            end_time (str): End time (HH:mm:ss).
+            notes (str): Session notes.
+            quality (int): Quality rating (default 3).
+            
+        Raises:
+            ValueError: If validation fails or an error occurs during saving.
+        """
+        # Data validity checks
         if not subject:
             raise ValueError("Subject cannot be empty.")
         
@@ -26,18 +51,17 @@ class ViewModel(QObject):
         if start_time >= end_time:
             raise ValueError("Start time must be before end time.")
 
-        # ensure subject exists
+        # Ensure subject exists
         subjects = self.repository.get_all_subjects() or []
-        # repository returns list of tuples (id, name) — check names
+        # Repository returns list of tuples (id, name) — check names
         names = [row[1] if isinstance(row, (tuple, list)) and len(row) > 1 else str(row) for row in subjects]
         if subject not in names:
             raise ValueError("Subject does not exist. Please add it before creating an entry.")
         
-        # Creazione del dizionario del soggetto e chiamata al repository
+        # Create session object and call repository
         try:
             subject_id = self.repository.get_subject_id_by_name(subject)
-            # store times as full timestamp strings (date + time) for reliable julianday calculations
-            # Assume start_time and end_time now include seconds (HH:mm:ss)
+            # Store times as full timestamp strings (date + time) for reliable julianday calculations
             start_ts = f"{date} {start_time}"
             end_ts = f"{date} {end_time}"
 
@@ -52,7 +76,7 @@ class ViewModel(QObject):
             )
 
             self.repository.add_entry(session)
-            # notify UI listeners
+            # Notify UI listeners
             self.entries_changed.emit()
 
         except ValueError as e:
@@ -61,8 +85,20 @@ class ViewModel(QObject):
             raise ValueError(f"An error occurred while saving entry: {e}")
 
     def add_subject(self, name, semester, year, credits=0, notes=""):
-
-        # Controlli di validità dei dati
+        """
+        Validates and adds a new study subject.
+        
+        Args:
+            name (str): Subject name.
+            semester (int): Semester (1 or 2).
+            year (int): Academic year.
+            credits (int): Credit value (default 0).
+            notes (str): Subject notes.
+            
+        Raises:
+            ValueError: If validation fails or an error occurs.
+        """
+        # Data validity checks
         if semester not in [1, 2]:
             raise ValueError("Semester must be 1 or 2.")
         if year < 1:
@@ -72,7 +108,7 @@ class ViewModel(QObject):
         if not name:
             raise ValueError("Subject name cannot be empty.")
         
-        # Creazione del Subject dataclass e chiamata al repository
+        # Create Subject dataclass and call repository
         try:
             subj = Subject(
                 id=None,
@@ -83,19 +119,21 @@ class ViewModel(QObject):
                 notes=notes
             )
             self.repository.add_subject(subj)
-            # notify UI listeners
+            # Notify UI listeners
             self.subjects_changed.emit()
 
         except Exception as e:  
             raise ValueError(f"An error occurred while adding the subject: {e}")
         
     def get_subjects(self):
-        """Return a list of subjects from the repository.
-
-        The repository method returns whatever the database returns (usually a
-        list of tuples). The UI layers are responsible for interpreting the
-        format. If there are no subjects an empty list is returned instead of a
-        string; this simplifies client code.
+        """
+        Retrieves a list of all subjects.
+        
+        Returns:
+            list: List of subject tuples from the repository.
+            
+        Raises:
+            ValueError: If an error occurs during retrieval.
         """
         try:
             subjects = self.repository.get_all_subjects()
@@ -106,66 +144,143 @@ class ViewModel(QObject):
             raise ValueError(f"An error occurred while fetching subjects: {e}")
         
     def get_last_entries(self, limit=10):
+        """
+        Retrieves the most recent study session entries.
+        
+        Args:
+            limit (int): Max number of entries to retrieve.
+            
+        Returns:
+            list: List of recent session data.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             entries = self.repository.get_last_entries(limit)
             return entries
         except Exception as e:
             raise ValueError(f"An error occurred while fetching last entries: {e}")
 
-    # ---- new methods for subject details support ----
     def select_subject(self, subject: str):
-        """Keep track of the currently selected subject."""
+        """
+        Sets the currently active/selected subject in the application state.
+        
+        Args:
+            subject (str): The name of the subject to select.
+        """
         self.selected_subject = subject
 
     def get_subject_details(self, subject: str) -> dict:
         """
-        Return a dictionary of properties for the given subject.
-
-        The repository is expected to return a row/tuple; convert it to a dict
-        so that the view layer can iterate over ``items()``.
+        Retrieves detailed information and stats for a specific subject.
+        
+        Args:
+            subject (str): Subject name.
+            
+        Returns:
+            dict: Dictionary of subject properties and statistics.
+            
+        Raises:
+            ValueError: If an error occurs.
         """
         try:
             row = self.repository.get_subject_details(subject)
             if not row:
                 return {}
-            # depending on repository implementation the row may contain
-            # (id, name, semester, year, credits, notes) or similar
+            # Map database row to dictionary keys
             keys = ["id", "name", "semester", "year", "credits", "notes", "total_hours", "avg_quality"]
             return {k: v for k, v in zip(keys, row)}
         except Exception as e:
             raise ValueError(f"An error occurred while fetching subject details: {e}")
         
     def update_subject(self, subject_id: int, name: str, semester: int, year: int, credits: int, notes: str):
+        """
+        Updates an existing subject's details.
+        
+        Args:
+            subject_id (int): Subject identifier.
+            name (str): New name.
+            semester (int): New semester.
+            year (int): New year.
+            credits (int): New credits.
+            notes (str): New notes.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             self.repository.modify_subject(subject_id, name, semester, year, credits, notes)
-            # notify UI listeners
+            # Notify UI listeners
             self.subjects_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while updating the subject: {e}")
     
     def delete_subject(self, subject_id: int):
+        """
+        Deletes a subject and its associated data.
+        
+        Args:
+            subject_id (int): Subject identifier.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             self.repository.delete_subject(subject_id)
-            # notify UI listeners
+            # Notify UI listeners
             self.subjects_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while deleting the subject: {e}")
     
     def delete_entry(self, entry_id: int):
+        """
+        Deletes a specific study session entry.
+        
+        Args:
+            entry_id (int): Entry identifier.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             self.repository.delete_entry(entry_id)
-            # notify UI listeners
+            # Notify UI listeners
             self.entries_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while deleting the entry: {e}")
     
     def get_subject_id_by_name(self, name: str) -> int | None:
+        """
+        Gets the ID for a given subject name.
+        
+        Args:
+            name (str): Subject name.
+            
+        Returns:
+            int | None: Subject ID or None.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             return self.repository.get_subject_id_by_name(name)
         except Exception as e:
             raise ValueError(f"An error occurred while fetching subject ID: {e}")
         
     def get_entry_by_id(self, entry_id: int) -> dict:
+        """
+        Retrieves data for a single study session entry.
+        
+        Args:
+            entry_id (int): Entry identifier.
+            
+        Returns:
+            dict: Dictionary of entry properties.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             row = self.repository.get_entry_by_id(entry_id)
             if not row:
@@ -176,30 +291,100 @@ class ViewModel(QObject):
             raise ValueError(f"An error occurred while fetching entry details: {e}")
         
     def modify_entry(self, entry_id: int, subject: str, date: str, start_time: str, end_time: str, notes: str, quality: int):
+        """
+        Updates an existing study session entry.
+        
+        Args:
+            entry_id (int): Entry identifier.
+            subject (str): Subject name.
+            date (str): New date.
+            start_time (str): New start time.
+            end_time (str): New end time.
+            notes (str): New notes.
+            quality (int): New quality rating.
+            
+        Raises:
+            ValueError: If an error occurs or subject doesn't exist.
+        """
         try:
             subject_id = self.get_subject_id_by_name(subject)
             if subject_id is None:
                 raise ValueError("Subject does not exist.")
             
             self.repository.modify_entry(entry_id, subject, date, start_time, end_time, notes, quality)
-            # notify UI listeners
+            # Notify UI listeners
             self.entries_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while modifying the entry: {e}")
 
+    def get_subject_quality_distribution(self, name: str):
+        """
+        Retrieves the distribution of session quality for a subject.
+        
+        Args:
+            name (str): Subject name.
+            
+        Returns:
+            dict: Mapping of quality (1-5) to frequency.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
+        try:
+            return self.repository.get_subject_quality_distribution(name)
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching quality distribution: {e}")
+
     def get_subject_stats_over_time(self, name: str, days=7):
+        """
+        Retrieves time-series study data for a subject.
+        
+        Args:
+            name (str): Subject name.
+            days (int): Time period.
+            
+        Returns:
+            list: List of (date, hours) tuples.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             return self.repository.get_subject_stats_over_time(name, days)
         except Exception as e:
             raise ValueError(f"An error occurred while fetching stats: {e}")
 
     def get_daily_stats(self, days=365):
+        """
+        Retrieves aggregated daily study stats for all subjects.
+        
+        Args:
+            days (int): Time period.
+            
+        Returns:
+            list: List of (date, total_hours) tuples.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             return self.repository.database.get_daily_stats(days)
         except Exception as e:
             raise ValueError(f"An error occurred while fetching daily stats: {e}")
 
     def get_entries_by_date(self, date_str: str):
+        """
+        Retrieves all sessions occurring on a specific date.
+        
+        Args:
+            date_str (str): Target date (YYYY-MM-DD).
+            
+        Returns:
+            list: List of session dictionaries.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             rows = self.repository.get_entries_by_date(date_str)
             keys = ["id", "subject_name", "start_time", "end_time", "quality", "notes"]
@@ -209,6 +394,19 @@ class ViewModel(QObject):
 
     # --- TASK METHODS ---
     def add_task(self, subject_name, title, description="", due_date=None, priority=2):
+        """
+        Validates and adds a new task for a subject.
+        
+        Args:
+            subject_name (str): Subject name.
+            title (str): Task title.
+            description (str): Task description.
+            due_date (str): Due date (YYYY-MM-DD).
+            priority (int): Task priority.
+            
+        Raises:
+            ValueError: If title is empty, subject doesn't exist, or an error occurs.
+        """
         if not title:
             raise ValueError("Task title cannot be empty.")
         
@@ -231,6 +429,18 @@ class ViewModel(QObject):
             raise ValueError(f"An error occurred while adding the task: {e}")
 
     def get_tasks_by_subject(self, subject_name):
+        """
+        Retrieves all tasks for a specific subject.
+        
+        Args:
+            subject_name (str): Subject name.
+            
+        Returns:
+            list: List of tasks.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         subject_id = self.get_subject_id_by_name(subject_name)
         if not subject_id:
             return []
@@ -240,12 +450,31 @@ class ViewModel(QObject):
             raise ValueError(f"An error occurred while fetching tasks: {e}")
 
     def get_all_tasks(self):
+        """
+        Retrieves all tasks across all subjects.
+        
+        Returns:
+            list: List of all tasks.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             return self.repository.get_all_tasks()
         except Exception as e:
             raise ValueError(f"An error occurred while fetching all tasks: {e}")
 
     def toggle_task_completion(self, task_id, is_completed):
+        """
+        Toggles the completion status of a task.
+        
+        Args:
+            task_id (int): Task identifier.
+            is_completed (bool): New completion status.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             self.repository.update_task_status(task_id, is_completed)
             self.tasks_changed.emit()
@@ -253,6 +482,15 @@ class ViewModel(QObject):
             raise ValueError(f"An error occurred while updating task: {e}")
 
     def delete_task(self, task_id):
+        """
+        Deletes a task.
+        
+        Args:
+            task_id (int): Task identifier.
+            
+        Raises:
+            ValueError: If an error occurs.
+        """
         try:
             self.repository.delete_task(task_id)
             self.tasks_changed.emit()

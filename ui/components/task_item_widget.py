@@ -1,7 +1,19 @@
+# ui/components/task_item_widget.py
+"""
+Custom widget representing a single task item in a list.
+Displays task details (title, description, priority, due date) and allows completion toggle and deletion.
+"""
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QMessageBox
 from PySide6.QtCore import Qt
 
 class TaskItemWidget(QWidget):
+    """
+    A widget to display and manage a single task.
+    
+    Attributes:
+        task_id (int): Unique identifier of the task.
+        viewmodel (ViewModel): The business logic controller.
+    """
     def __init__(self, task_id, title, description, due_date, priority, is_completed, viewmodel, parent=None):
         super().__init__(parent)
         self.task_id = task_id
@@ -10,7 +22,7 @@ class TaskItemWidget(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         
-        # Top Row: Checkbox, Title, Priority, Delete
+        # Top Row: Checkbox, Title, Priority label, and Delete button
         top_layout = QHBoxLayout()
         self.checkbox = QCheckBox()
         self.checkbox.setChecked(bool(is_completed))
@@ -19,8 +31,10 @@ class TaskItemWidget(QWidget):
         self.label = QLabel(title)
         self.label.setStyleSheet("font-weight: bold;")
         if is_completed:
+            # Visual feedback for completed tasks
             self.label.setStyleSheet("text-decoration: line-through; color: gray; font-weight: bold;")
             
+        # Priority mapping and styling
         priority_map = {1: "Bassa", 2: "Media", 3: "Alta"}
         priority_colors = {1: "green", 2: "#e67e22", 3: "red"}
         self.priority_label = QLabel(f"Prio: {priority_map.get(priority, 'N/A')}")
@@ -36,10 +50,10 @@ class TaskItemWidget(QWidget):
         top_layout.addWidget(self.delete_btn)
         main_layout.addLayout(top_layout)
         
-        # Bottom Row: Description and Due Date
+        # Bottom Row: Optional Description and Due Date
         if description or due_date:
             info_layout = QHBoxLayout()
-            info_layout.setContentsMargins(30, 0, 0, 0)
+            info_layout.setContentsMargins(30, 0, 0, 0) # Indent from checkbox
             
             if description:
                 desc_label = QLabel(description)
@@ -55,6 +69,7 @@ class TaskItemWidget(QWidget):
             main_layout.addLayout(info_layout)
 
     def on_toggle(self, state):
+        """Updates task completion status in the database and updates UI style."""
         is_completed = (state == Qt.Checked.value)
         try:
             self.viewmodel.toggle_task_completion(self.task_id, is_completed)
@@ -63,10 +78,11 @@ class TaskItemWidget(QWidget):
             else:
                 self.label.setStyleSheet("font-weight: bold;")
         except Exception as e:
-            QMessageBox.critical(self, "Errore", str(e))
+            QMessageBox.critical(self, "Errore", f"Impossibile aggiornare il task: {str(e)}")
 
     def on_delete(self):
+        """Deletes the task after user clicks the delete button."""
         try:
             self.viewmodel.delete_task(self.task_id)
         except Exception as e:
-            QMessageBox.critical(self, "Errore", str(e))
+            QMessageBox.critical(self, "Errore", f"Impossibile eliminare il task: {str(e)}")

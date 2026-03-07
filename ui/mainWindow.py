@@ -1,31 +1,62 @@
 import sys
 from PySide6.QtWidgets import (
-    QLabel, QStackedWidget, QTabWidget, QWidget, QHBoxLayout, QVBoxLayout
+    QLabel, QStackedWidget, QWidget, QHBoxLayout, QVBoxLayout, QTabBar
     )
 
 from ui.sub_manager_ui import SubManager
 from ui.new_entry_ui import EntryWidget
 from ui.task_manager_ui import TaskManager
 from ui.calendar_ui import CalendarUI
+from ui.components.sliding_stack import SlidingStackedWidget
 
 class MainWindow(QWidget):
+    """
+    The main window of the Study Tracker application.
+    It uses a QTabBar and a SlidingStackedWidget to organize different functional areas with animations.
+    """
     def __init__(self, viewmodel):
+        """
+        Initializes the main window and its child tabs.
+        
+        Args:
+            viewmodel (ViewModel): The viewmodel instance for data binding.
+        """
         super().__init__()
         self.viewmodel = viewmodel
         self.setWindowTitle("Studio Tracker")
+        self.resize(1000, 750)
 
-        self.layout = QHBoxLayout(self)
+        # Main vertical layout
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(5, 5, 5, 5)
+        self.main_layout.setSpacing(0)
 
-        self.tabs = QTabWidget()
+        # Create tab bar
+        self.tab_bar = QTabBar()
+        self.tab_bar.setExpanding(True)
+        self.tab_bar.addTab("Nuova sessione")
+        self.tab_bar.addTab("Gestione materie")
+        self.tab_bar.addTab("Gestione attività")
+        self.tab_bar.addTab("Calendario")
+
+        # Create animated stack
+        self.stack = SlidingStackedWidget()
+        
+        # Individual tab widgets
         self.entryTab = EntryWidget(viewmodel=self.viewmodel)
         self.subManagerTab = SubManager(viewmodel=self.viewmodel)
         self.taskManagerTab = TaskManager(viewmodel=self.viewmodel)
         self.calendarTab = CalendarUI(viewmodel=self.viewmodel)
 
+        # Add widgets to the animated stack
+        self.stack.addWidget(self.entryTab)
+        self.stack.addWidget(self.subManagerTab)
+        self.stack.addWidget(self.taskManagerTab)
+        self.stack.addWidget(self.calendarTab)
 
-        self.tabs.addTab(self.entryTab, "Nuova sessione")
-        self.tabs.addTab(self.subManagerTab, "Gestione materie")
-        self.tabs.addTab(self.taskManagerTab, "Gestione attività")
-        self.tabs.addTab(self.calendarTab, "Calendario")
+        # Connect tab bar change signal to the stack's animation method
+        self.tab_bar.currentChanged.connect(self.stack.slide_to_index)
 
-        self.layout.addWidget(self.tabs)
+        # Add to main layout
+        self.main_layout.addWidget(self.tab_bar)
+        self.main_layout.addWidget(self.stack)

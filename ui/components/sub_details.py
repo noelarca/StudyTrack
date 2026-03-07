@@ -1,174 +1,198 @@
+# ui/components/sub_details.py
+"""
+Widget for displaying detailed information about a specific subject, 
+including statistics, associated tasks, and options to edit or delete the subject.
+"""
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, 
-    QListWidget, QHBoxLayout, QPushButton
+    QListWidget, QHBoxLayout, QPushButton,
+    QFrame, QGridLayout, QScrollArea
 )
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QDateTimeAxis, QValueAxis
-from PySide6.QtCore import Qt, QDateTime, QPointF
-from PySide6.QtGui import QPainter
+from PySide6.QtCore import Qt
 from ui.components.new_sub_window import NewSubjectWindow
-
-class SubjectChart(QChartView):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setRenderHint(QPainter.Antialiasing)
-        
-        self.chart = QChart()
-        self.chart.setAnimationOptions(QChart.SeriesAnimations)
-        self.chart.legend().hide()
-        self.setChart(self.chart)
-        
-        self.series = QLineSeries()
-        self.chart.addSeries(self.series)
-        
-        self.axis_x = QDateTimeAxis()
-        self.axis_x.setFormat("dd/MM")
-        self.axis_x.setTitleText("Data")
-        self.chart.addAxis(self.axis_x, Qt.AlignBottom)
-        self.series.attachAxis(self.axis_x)
-        
-        self.axis_y = QValueAxis()
-        self.axis_y.setTitleText("Ore")
-        self.chart.addAxis(self.axis_y, Qt.AlignLeft)
-        self.series.attachAxis(self.axis_y)
-
-    def update_data(self, data):
-        self.series.clear()
-        if not data:
-            return
-            
-        min_date = None
-        max_date = None
-        max_hours = 0
-        
-        for date_str, hours in data:
-            dt = QDateTime.fromString(date_str, "yyyy-MM-dd")
-            self.series.append(dt.toMSecsSinceEpoch(), hours)
-            
-            if min_date is None or dt < min_date:
-                min_date = dt
-            if max_date is None or dt > max_date:
-                max_date = dt
-            if hours > max_hours:
-                max_hours = hours
-                
-        if min_date and max_date:
-            self.axis_x.setRange(min_date, max_date)
-            # Aggiungiamo un po' di padding alla Y
-            self.axis_y.setRange(0, max_hours * 1.2 if max_hours > 0 else 1)
+from ui.components.subject_graph import SubjectGraphWidget, QualityPieChart
 
 class SubDetails(QWidget):
+    """
+    Displays subject-specific details and provides management actions.
+    
+    Attributes:
+        viewmodel (ViewModel): The business logic controller.
+        current_subject (dict/str): Currently selected subject data.
+    """
     def __init__(self, viewmodel=None):
         super().__init__()
         self.viewmodel = viewmodel
-        self.current_subject = None  # Store the currently displayed subject for editing purposes
+        self.current_subject = None
 
-        self.layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
+        
+        # Scroll area for long content
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll_content = QWidget()
+        self.layout = QVBoxLayout(self.scroll_content)
+        self.layout.setSpacing(15)
+        self.scroll.setWidget(self.scroll_content)
+        self.main_layout.addWidget(self.scroll)
 
-        option_buttons_layout = QHBoxLayout()
-
+        # Toolbar layout: Title and management buttons
+        toolbar = QHBoxLayout()
+        self.title = QLabel("Seleziona una materia")
+        self.title.setStyleSheet("font-weight: bold; font-size: 22px;")
+        
         self.edit_button = QPushButton("Modifica")
         self.edit_button.clicked.connect(self.edit_subject)
+        
         self.delete_button = QPushButton("Elimina")
-        self.delete_button.clicked.connect(self.delete_subject) 
-        option_buttons_layout.addWidget(self.edit_button)
-        option_buttons_layout.addWidget(self.delete_button)
+        self.delete_button.clicked.connect(self.delete_subject)
         
-        self.layout.addLayout(option_buttons_layout)
-        
-        self.title = QLabel("Dettagli materia:")
-        self.title.setStyleSheet("font-weight: bold; font-size: 20px;")
-        self.layout.addWidget(self.title)
+        toolbar.addWidget(self.title)
+        toolbar.addStretch()
+        toolbar.addWidget(self.edit_button)
+        toolbar.addWidget(self.delete_button)
+        self.layout.addLayout(toolbar)
 
-        # Container per i dettagli testuali
-        self.details_list = QListWidget()
-        self.details_list.setMaximumHeight(150)
-        self.layout.addWidget(self.details_list)
-
-        # Aggiunta del grafico
-        self.chart_label = QLabel("Andamento studio (ultimi 7 giorni):")
-        self.chart_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
-        self.layout.addWidget(self.chart_label)
+        # Stats Cards Layout: Displays aggregate metrics for the subject
+        stats_container = QFrame()
+        stats_container.setFrameShape(QFrame.StyledPanel)
+        stats_container.setStyleSheet("border-radius: 10px; background-color: rgba(0,0,0,5);")
+        stats_layout = QGridLayout(stats_container)
         
-        self.chart_view = SubjectChart()
-        self.layout.addWidget(self.chart_view)
+        self.total_hours_label = QLabel("0.00")
+        self.total_hours_label.setStyleSheet("font-size: 24px; font-weight: bold;")
+        self.avg_quality_label = QLabel("0.0")
+        self.avg_quality_label.setStyleSheet("font-size: 24px; font-weight: bold;")
+        self.cfu_label = QLabel("0")
+        self.cfu_label.setStyleSheet("font-size: 24px; font-weight: bold;")
+
+        stats_layout.addWidget(QLabel("Ore Totali"), 0, 0, Qt.AlignCenter)
+        stats_layout.addWidget(self.total_hours_label, 1, 0, Qt.AlignCenter)
+        
+        stats_layout.addWidget(QLabel("Qualità Media"), 0, 1, Qt.AlignCenter)
+        stats_layout.addWidget(self.avg_quality_label, 1, 1, Qt.AlignCenter)
+        
+        stats_layout.addWidget(QLabel("CFU"), 0, 2, Qt.AlignCenter)
+        stats_layout.addWidget(self.cfu_label, 1, 2, Qt.AlignCenter)
+        
+        self.layout.addWidget(stats_container)
+
+        # Info section
+        self.info_label = QLabel("")
+        self.info_label.setWordWrap(True)
+        self.info_label.setStyleSheet("font-style: italic; color: gray;")
+        self.layout.addWidget(self.info_label)
+
+        # Graphs Section
+        graphs_layout = QHBoxLayout()
+        self.hours_graph = SubjectGraphWidget()
+        self.hours_graph.setMinimumHeight(300)
+        self.quality_chart = QualityPieChart()
+        self.quality_chart.setMinimumHeight(300)
+        
+        graphs_layout.addWidget(self.hours_graph, 3)
+        graphs_layout.addWidget(self.quality_chart, 2)
+        self.layout.addLayout(graphs_layout)
+
+        # Tasks Section: Lists tasks linked to this subject
+        tasks_header = QLabel("Task Associate")
+        tasks_header.setStyleSheet("font-weight: bold; font-size: 16px; margin-top: 10px;")
+        self.layout.addWidget(tasks_header)
+        
+        self.tasks_list = QListWidget()
+        self.tasks_list.setMinimumHeight(150)
+        self.layout.addWidget(self.tasks_list)
+        
+        self.layout.addStretch()
 
     def load_details(self, subject):
-        # Accept either an explicit subject or use current_subject
+        """
+        Loads and displays details for the given subject.
+        
+        Args:
+            subject (dict/str): Subject object or name to load.
+        """
         if subject is None:
-            subject = getattr(self, "current_subject", None)
-        else:
-            self.current_subject = subject
-
-        self.details_list.clear()
-
-        # Determine a name to show in the title
+            return
+        
+        self.current_subject = subject
+        
+        # Normalize name extraction
         if isinstance(subject, str):
             name = subject
         elif isinstance(subject, dict):
-            name = subject.get("name") or subject.get("title") or str(subject)
+            name = subject.get("name")
         else:
-            name = getattr(subject, "name", None) or getattr(subject, "title", None) or str(subject)
+            name = getattr(subject, "name", "Sconosciuto")
 
-        self.title.setText(f"{name}")
+        self.title.setText(name)
 
+        # Fetch subject details from viewmodel
         details = self.viewmodel.get_subject_details(name) if self.viewmodel else {}
+        
         if details:
-            for key, value in details.items():
-                if key in ["id", "name"]: continue
-                label = "CFU" if key == "credits" else key.capitalize()
-                if key == "total_hours": label = "Ore Totali"
-                if key == "avg_quality": label = "Qualità Media"
-                
-                # Format floats
-                if isinstance(value, float):
-                    value = f"{value:.2f}"
-                
-                self.details_list.addItem(f"{label}: {value}")
+            # Update Stats displays
+            total_hours = details.get("total_hours", 0) or 0
+            avg_quality = details.get("avg_quality", 0) or 0
+            cfu = details.get("credits", 0) or 0
+            
+            self.total_hours_label.setText(f"{total_hours:.1f}")
+            self.avg_quality_label.setText(f"{avg_quality:.1f}")
+            self.cfu_label.setText(str(cfu))
+            
+            # Update Info metadata text
+            semester = details.get("semester", "-")
+            year = details.get("year", "-")
+            notes = details.get("notes", "")
+            info_text = f"Anno {year}, Semestre {semester}"
+            if notes:
+                info_text += f"\nNote: {notes}"
+            self.info_label.setText(info_text)
 
-        # Carica i dati per il grafico
+        # Update Graphs
         if self.viewmodel:
-            stats = self.viewmodel.get_subject_stats_over_time(name, days=7)
-            self.chart_view.update_data(stats)
+            stats_over_time = self.viewmodel.get_subject_stats_over_time(name, days=14)
+            self.hours_graph.update_data(stats_over_time)
+            
+            quality_dist = self.viewmodel.get_subject_quality_distribution(name)
+            self.quality_chart.update_data(quality_dist)
+
+        # Update associated tasks list
+        self.tasks_list.clear()
+        if self.viewmodel:
+            tasks = self.viewmodel.get_tasks_by_subject(name)
+            if not tasks:
+                self.tasks_list.addItem("Nessun task per questa materia")
+            else:
+                for task in tasks:
+                    # task format: (id, subject_id, title, desc, due, priority, completed)
+                    status = "[✓]" if task[6] else "[ ]"
+                    self.tasks_list.addItem(f"{status} {task[2]}")
 
     @property
     def subject(self):
-        return getattr(self, "current_subject", None)
+        """The currently loaded subject."""
+        return self.current_subject
 
     @subject.setter
     def subject(self, value):
-        if value != getattr(self, "current_subject", None):
-            self.current_subject = value
+        """Sets the current subject and triggers UI update."""
+        if value != self.current_subject:
             self.load_details(value)
-            if self.viewmodel and hasattr(self.viewmodel, "select_subject"):
-                try:
-                    # Se value è un dict, passa il nome
-                    name = value.get("name") if isinstance(value, dict) else value
-                    self.viewmodel.select_subject(name)
-                except Exception:
-                    pass
 
     def edit_subject(self):
-        # keep a reference so the window doesn't get garbage collected immediately
-        print("Edit subject:", self.current_subject)
-        # if there is no subject selected, nothing to edit
+        """Opens the edit window for the current subject."""
         if self.current_subject is None:
             return
-
-        # create/edit window and store it on the instance
         self._edit_window = NewSubjectWindow(viewmodel=self.viewmodel, subject=self.current_subject)
         self._edit_window.show()
-        # ensure the window is brought to front
-        try:
-            self._edit_window.raise_()
-            self._edit_window.activateWindow()
-        except Exception:
-            pass
+        self._edit_window.raise_()
+        self._edit_window.activateWindow()
 
     def delete_subject(self):
+        """Deletes the current subject after confirming ID."""
         name = self.current_subject.get("name") if isinstance(self.current_subject, dict) else self.current_subject
-        self.subject_id = self.viewmodel.get_subject_id_by_name(name) if name else None
-        if self.subject_id is None:
-            return
-        else:
-            print("Attempting to delete subject with ID:", self.subject_id)
-            self.viewmodel.delete_subject(self.subject_id)
+        subject_id = self.viewmodel.get_subject_id_by_name(name)
+        if subject_id:
+            # Note: viewmodel.delete_subject should handle UI refreshment via signals
+            self.viewmodel.delete_subject(subject_id)

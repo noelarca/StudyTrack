@@ -1,14 +1,91 @@
 # ui/components/stopwatch_widget.py
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox
-from PySide6.QtCore import QTimer, QTime, Qt, Signal
+"""
+Stopwatch and Pomodoro timer widgets for tracking study sessions.
+Includes a custom animated switch and a full-featured timer widget.
+"""
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QPushButton, 
+    QHBoxLayout, QComboBox, QSizePolicy, QAbstractButton,
+    QSpinBox, QFrame
+)
+from PySide6.QtCore import (
+    QTimer, QTime, Qt, Signal, Property, 
+    QPoint, QPropertyAnimation, QSize
+)
+from PySide6.QtGui import QPainter, QColor
+
+class Switch(QAbstractButton):
+    """
+    A custom animated toggle switch widget.
+    
+    Attributes:
+        _offset (int): Current horizontal offset of the slider thumb.
+        _anim (QPropertyAnimation): Animation for the thumb movement.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setCheckable(True)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._offset = 2
+        self._anim = QPropertyAnimation(self, b"offset", self)
+        self._anim.setDuration(150)
+
+    @Property(int)
+    def offset(self):
+        """Property for the thumb offset, used by animation."""
+        return self._offset
+
+    @offset.setter
+    def offset(self, value):
+        self._offset = value
+        self.update()
+
+    def sizeHint(self):
+        """Returns the recommended size for the switch (Compact)."""
+        return QSize(36, 18)
+
+    def paintEvent(self, event):
+        """Custom paint event to draw the switch track and thumb."""
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setPen(Qt.NoPen)
+        
+        # Colors from theme or defaults
+        highlight = self.palette().highlight().color()
+        track_color = highlight if self.isChecked() else QColor("#808080")
+        thumb_color = QColor("white")
+        
+        # Draw track (rounded rectangle) - Height 18, radius 9
+        p.setBrush(track_color)
+        p.drawRoundedRect(0, 0, self.width(), self.height(), 9, 9)
+        
+        # Draw thumb (circle) - Size 14x14, centered vertically
+        p.setBrush(thumb_color)
+        p.drawEllipse(self._offset, 2, 14, 14)
+
+    def nextCheckState(self):
+        """Handles the state transition and starts the animation."""
+        super().nextCheckState()
+        self._anim.setStartValue(self._offset)
+        # Offset end value: Width(36) - ThumbWidth(14) - Margin(2) = 20
+        self._anim.setEndValue(20 if self.isChecked() else 2)
+        self._anim.start()
 
 class StopwatchWidget(QWidget):
+    """
+    A widget providing both Stopwatch and Pomodoro timer functionalities.
+    
+    Signals:
+        session_finished (QTime, QTime): Emitted when a session ends, 
+                                        containing start and end times.
+    """
     # Emits (StartTime, EndTime)
     session_finished = Signal(QTime, QTime)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         
+        # Core timer logic
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_timer)
         
@@ -19,136 +96,210 @@ class StopwatchWidget(QWidget):
         # Pomodoro specific state
         self.mode = "Stopwatch" # "Stopwatch" or "Pomodoro"
         self.pomodoro_phase = "Work" # "Work" or "Break"
-        self.remaining_seconds = 25 * 60 # Default Pomodoro work time
         self.work_duration = 25 * 60
         self.break_duration = 5 * 60
+        self.remaining_seconds = self.work_duration
 
         self.setup_ui()
 
     def setup_ui(self):
+        """Initializes the user interface components."""
         layout = QVBoxLayout(self)
+        layout.setSpacing(15)
 
-        # 0. Mode Selector
+        # Add stretch at top to center the entire widget area vertically
+        layout.addStretch()
+
+        # 1. Integrated Timer Container (Switch & Time centered)
+        self.timer_container = QFrame()
+        self.timer_container.setFrameShape(QFrame.StyledPanel)
+        self.timer_container.setFixedHeight(220) # Larger height for better visibility
+        self.timer_container.setStyleSheet("""
+            QFrame {
+                border: 1px solid;
+                border-radius: 20px;
+                padding: 10px;
+            }
+        """)
+        timer_layout = QVBoxLayout(self.timer_container)
+        timer_layout.setContentsMargins(10, 10, 10, 15)
+        timer_layout.setSpacing(0)
+
+        # 1.1 Mode Switch Row (Top)
         mode_layout = QHBoxLayout()
-        mode_label = QLabel("Modalità:")
-        self.mode_selector = QComboBox()
-        self.mode_selector.addItems(["Cronometro Standard", "Pomodoro (25/5)"])
-        self.mode_selector.currentIndexChanged.connect(self.change_mode)
-        mode_layout.addWidget(mode_label)
-        mode_layout.addWidget(self.mode_selector)
-        layout.addLayout(mode_layout)
+        self.sw_label = QLabel("Stopwatch")
+        self.sw_label.setStyleSheet("font-weight: bold; border: none; font-size: 11px;")
+        
+        self.mode_switch = Switch()
+        self.mode_switch.toggled.connect(self.on_mode_toggled)
+        
+        self.pom_label = QLabel("Pomodoro")
+        self.pom_label.setStyleSheet("color: gray; border: none; font-size: 11px;")
+        
+        mode_layout.addStretch()
+        mode_layout.addWidget(self.sw_label)
+        mode_layout.addWidget(self.mode_switch)
+        mode_layout.addWidget(self.pom_label)
+        mode_layout.addStretch()
+        timer_layout.addLayout(mode_layout)
 
-        # 1. Phase Label (for Pomodoro)
+        timer_layout.addStretch()
+
+        # 1.2 Phase Label
         self.phase_label = QLabel("SESSIONE STANDARD")
         self.phase_label.setAlignment(Qt.AlignCenter)
-        self.phase_label.setFixedHeight(20) # Fixed height
-        self.phase_label.setStyleSheet("font-weight: bold; color: #7f8c8d;")
-        layout.addWidget(self.phase_label)
+        self.phase_label.setStyleSheet("font-weight: bold; font-size: 13px; border: none; color: gray;")
+        timer_layout.addWidget(self.phase_label)
 
-        # 2. Time Display
+        # 1.3 Time Display
         self.time_display = QLabel("00:00:00")
         self.time_display.setAlignment(Qt.AlignCenter)
-        self.time_display.setStyleSheet("""
-            font-size: 48px; 
-            font-weight: bold; 
-            color: #2c3e50;
-            background-color: #ecf0f1;
-            border-radius: 10px;
-            padding: 10px;
-        """)
-        layout.addWidget(self.time_display)
+        self.time_display.setStyleSheet("font-size: 72px; font-weight: bold; border: none; margin-top: -10px;")
+        timer_layout.addWidget(self.time_display)
+
+        timer_layout.addStretch()
+        layout.addWidget(self.timer_container)
+
+        # 2. Pomodoro Settings (Outside Timer, Underneath)
+        self.pom_settings = QWidget()
+        pom_settings_layout = QHBoxLayout(self.pom_settings)
+        pom_settings_layout.setContentsMargins(0, 0, 0, 5)
+        pom_settings_layout.setSpacing(10)
+        
+        work_lbl = QLabel("Studio:")
+        work_lbl.setStyleSheet("font-size: 11px; color: gray;")
+        self.work_input = QSpinBox()
+        self.work_input.setRange(1, 120)
+        self.work_input.setValue(25)
+        self.work_input.setSuffix("m")
+        self.work_input.setFixedWidth(60)
+        self.work_input.setStyleSheet("font-size: 11px; height: 22px;")
+        self.work_input.valueChanged.connect(self.update_pomodoro_durations)
+        
+        break_lbl = QLabel("Pausa:")
+        break_lbl.setStyleSheet("font-size: 11px; color: gray;")
+        self.break_input = QSpinBox()
+        self.break_input.setRange(1, 30)
+        self.break_input.setValue(5)
+        self.break_input.setSuffix("m")
+        self.break_input.setFixedWidth(60)
+        self.break_input.setStyleSheet("font-size: 11px; height: 22px;")
+        self.break_input.valueChanged.connect(self.update_pomodoro_durations)
+        
+        pom_settings_layout.addStretch()
+        pom_settings_layout.addWidget(work_lbl)
+        pom_settings_layout.addWidget(self.work_input)
+        pom_settings_layout.addWidget(break_lbl)
+        pom_settings_layout.addWidget(self.break_input)
+        pom_settings_layout.addStretch()
+        
+        self.pom_settings.setVisible(False)
+        layout.addWidget(self.pom_settings)
+
+        # Space before buttons
+        layout.addStretch()
 
         # 3. Control Buttons
         btn_layout = QHBoxLayout()
+        # ... rest of setup_ui ...
+        # ... rest of setup_ui (buttons) remains same ...
         
         self.toggle_btn = QPushButton("AVVIA SESSIONE")
         self.toggle_btn.setCheckable(True)
-        self.toggle_btn.setStyleSheet("""
-            QPushButton { background-color: #27ae60; color: white; font-weight: bold; padding: 10px; }
-            QPushButton:checked { background-color: #c0392b; }
-        """)
+        self.toggle_btn.setStyleSheet("QPushButton { font-weight: bold; padding: 10px; }")
         self.toggle_btn.clicked.connect(self.toggle_timer)
 
         self.reset_btn = QPushButton("RESET")
-        self.reset_btn.setStyleSheet("""
-            QPushButton { background-color: #7f8c8d; color: white; font-weight: bold; padding: 10px; }
-            QPushButton:hover { background-color: #95a5a6; }
-        """)
+        self.reset_btn.setStyleSheet("QPushButton { font-weight: bold; padding: 10px; }")
         self.reset_btn.clicked.connect(self.reset_timer)
 
         btn_layout.addWidget(self.toggle_btn)
         btn_layout.addWidget(self.reset_btn)
         layout.addLayout(btn_layout)
 
-    def change_mode(self, index):
+    def on_mode_toggled(self, is_pomodoro):
+        """Switches between Stopwatch and Pomodoro modes."""
         if self.is_running:
-             self.reset_timer()
-        
-        if index == 0:
-            self.mode = "Stopwatch"
-            self.phase_label.setText("SESSIONE STANDARD")
-            self.time_display.setText("00:00:00")
-            self.phase_label.setStyleSheet("font-weight: bold; color: #7f8c8d;")
-        else:
+            self.reset_timer()
+            
+        if is_pomodoro:
             self.mode = "Pomodoro"
+            self.pom_label.setStyleSheet("font-weight: bold;")
+            self.sw_label.setStyleSheet("color: gray;")
+            self.pom_settings.setVisible(True)
+            self.update_pomodoro_durations()
+        else:
+            self.mode = "Stopwatch"
+            self.sw_label.setStyleSheet("font-weight: bold;")
+            self.pom_label.setStyleSheet("color: gray;")
+            self.pom_settings.setVisible(False)
+            self.reset_timer()
+
+    def update_pomodoro_durations(self):
+        """Updates durations from spinbox inputs and resets timer display if not running."""
+        self.work_duration = self.work_input.value() * 60
+        self.break_duration = self.break_input.value() * 60
+        if not self.is_running:
             self.pomodoro_phase = "Work"
             self.remaining_seconds = self.work_duration
-            self.update_display()
             self.phase_label.setText("POMODORO: STUDIO")
-            self.phase_label.setStyleSheet("font-weight: bold; color: #e67e22;")
+            self.update_display()
 
     def toggle_timer(self):
+        """Starts or stops the timer based on current state."""
         if self.toggle_btn.isChecked():
-            # --- START ---
             self.is_running = True
             self.start_time = QTime.currentTime()
+            self.mode_switch.setEnabled(False)
+            self.pom_settings.setEnabled(False)
             
             if self.mode == "Stopwatch":
                 self.toggle_btn.setText("FERMA E SALVA")
                 self.elapsed_seconds = 0
             else:
                 self.toggle_btn.setText("INTERROMPI")
-                # Reset to full duration if we just started
-                if self.pomodoro_phase == "Work":
-                    self.remaining_seconds = self.work_duration
-                else:
-                    self.remaining_seconds = self.break_duration
+                self.remaining_seconds = self.work_duration if self.pomodoro_phase == "Work" else self.break_duration
             
             self.timer.start(1000)
-            self.mode_selector.setEnabled(False)
         else:
-            # --- STOP ---
             self.stop_timer(manual=True)
 
     def stop_timer(self, manual=False):
+        """
+        Stops the timer and emits the session_finished signal.
+        
+        Args:
+            manual (bool): True if the user manually stopped the timer, 
+                          False if it ended automatically (Pomodoro).
+        """
         self.is_running = False
         self.timer.stop()
-        self.mode_selector.setEnabled(True)
+        self.mode_switch.setEnabled(True)
+        self.pom_settings.setEnabled(True)
         self.toggle_btn.setChecked(False)
         self.toggle_btn.setText("AVVIA SESSIONE")
         
         end_time = QTime.currentTime()
         
-        # For Stopwatch, we always save.
-        # For Pomodoro, we save if a Work session was interrupted or finished.
         if self.mode == "Stopwatch":
             if self.start_time:
                 self.session_finished.emit(self.start_time, end_time)
         elif self.mode == "Pomodoro" and self.pomodoro_phase == "Work":
             if self.start_time:
-                # If finished naturally, the duration is work_duration. 
-                # If manual stop, it's the actual elapsed time.
                 if not manual:
-                    # Logic for natural end
+                    # For automatic Pomodoro end, we use the set duration
                     actual_start = end_time.addSecs(-self.work_duration)
                     self.session_finished.emit(actual_start, end_time)
                 else:
+                    # For manual stop, use the actual elapsed time
                     self.session_finished.emit(self.start_time, end_time)
 
     def reset_timer(self):
+        """Resets the timer state and UI to initial values."""
         self.is_running = False
         self.timer.stop()
-        self.mode_selector.setEnabled(True)
+        self.mode_switch.setEnabled(True)
+        self.pom_settings.setEnabled(True)
         self.toggle_btn.setChecked(False)
         self.toggle_btn.setText("AVVIA SESSIONE")
         self.start_time = None
@@ -156,13 +307,12 @@ class StopwatchWidget(QWidget):
         if self.mode == "Stopwatch":
             self.elapsed_seconds = 0
             self.time_display.setText("00:00:00")
+            self.phase_label.setText("SESSIONE STANDARD")
         else:
-            self.pomodoro_phase = "Work"
-            self.remaining_seconds = self.work_duration
-            self.update_display()
-            self.phase_label.setText("POMODORO: STUDIO")
+            self.update_pomodoro_durations()
 
     def update_timer(self):
+        """Callback for the QTimer, updates time tracking based on mode."""
         if self.mode == "Stopwatch":
             self.elapsed_seconds += 1
             self.update_display()
@@ -174,31 +324,23 @@ class StopwatchWidget(QWidget):
                 self.update_display()
 
     def handle_phase_end(self):
+        """Handles transitions between Work and Break phases in Pomodoro mode."""
         if self.pomodoro_phase == "Work":
-            # Studio finito -> Break
-            self.stop_timer(manual=False) # Automatically saves the work session
+            self.stop_timer(manual=False)
             self.pomodoro_phase = "Break"
             self.remaining_seconds = self.break_duration
             self.phase_label.setText("POMODORO: PAUSA")
-            self.phase_label.setStyleSheet("font-weight: bold; color: #27ae60;")
             self.update_display()
-            # We don't auto-start the break, let user click start? Or auto-start?
-            # Standard Pomodoro usually requires user to start the next phase.
         else:
-            # Pausa finita -> Work
             self.stop_timer(manual=False)
             self.pomodoro_phase = "Work"
             self.remaining_seconds = self.work_duration
             self.phase_label.setText("POMODORO: STUDIO")
-            self.phase_label.setStyleSheet("font-weight: bold; color: #e67e22;")
             self.update_display()
 
     def update_display(self):
-        if self.mode == "Stopwatch":
-            secs_to_show = self.elapsed_seconds
-        else:
-            secs_to_show = self.remaining_seconds
-            
+        """Updates the time display label with formatted time."""
+        secs_to_show = self.elapsed_seconds if self.mode == "Stopwatch" else self.remaining_seconds
         hours = secs_to_show // 3600
         mins = (secs_to_show % 3600) // 60
         secs = secs_to_show % 60

@@ -1,3 +1,8 @@
+# ui/components/new_sub_window.py
+"""
+Window for creating a new subject or editing an existing one.
+Handles input validation and interaction with the ViewModel for data persistence.
+"""
 from PySide6.QtWidgets import (
     QLabel, QLineEdit, QSpinBox, QWidget, QVBoxLayout, 
     QHBoxLayout, QPushButton, QListWidget
@@ -5,11 +10,20 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QDate, Signal
 
 class NewSubjectWindow(QWidget):
+    """
+    A dialog-like window for subject entry and modification.
+    
+    Attributes:
+        viewmodel (ViewModel): The business logic controller.
+        subject (dict/str/None): Subject data if editing, else None.
+        is_editing (bool): Whether the window is in edit mode.
+    """
     def __init__(self, viewmodel=None, subject=None):
         super().__init__()
         self.viewmodel = viewmodel
         # subject may be either a name string (from sidebar/details) or a dict with fields
         self.subject = subject
+        self.is_completed = False # Track if operation succeeded
         self.is_editing = subject is not None
         # store the numeric id for updates when available
         self._subject_id = None
@@ -25,6 +39,10 @@ class NewSubjectWindow(QWidget):
                 # fallback to keeping the name string only
                 pass
 
+        self.setup_ui()
+
+    def setup_ui(self):
+        """Initializes the UI layout and widgets."""
         self.layout = QVBoxLayout(self)
 
         self.title = QLabel("Aggiungi nuova materia:")
@@ -34,15 +52,15 @@ class NewSubjectWindow(QWidget):
 
         self.semesterSubject = QLabel("Semestre:")
         self.semesterInput = QSpinBox()
-        self.semesterInput.setRange(1, 2)  # Limita il semestre a 1 o 2
+        self.semesterInput.setRange(1, 2)  # Limit semester to 1 or 2
 
         self.yearSubject = QLabel("Anno:")
         self.yearInput = QSpinBox()
-        self.yearInput.setRange(0,5)  # Limita l'anno a un intervallo ragionevole
+        self.yearInput.setRange(0, 5)  # Limit year to a reasonable range
         
         self.creditsSubject = QLabel("CFU:")
         self.creditsInput = QSpinBox()
-        self.creditsInput.setRange(0, 60)  # range of exam credits
+        self.creditsInput.setRange(0, 60)  # Typical range of exam credits
 
         self.notesSubject = QLabel("Note:")
         self.notesInput = QLineEdit()
@@ -50,8 +68,8 @@ class NewSubjectWindow(QWidget):
         self.saveButton = QPushButton("Salva")
         self.saveButton.clicked.connect(self.save_subject)
 
+        # Pre-fill fields if editing
         if self.is_editing:
-            # if subject is a dict we can pull fields, otherwise we only have name
             self.title.setText("Modifica materia:")
             if isinstance(self.subject, dict):
                 self._subject_id = self.subject.get("id")
@@ -67,10 +85,10 @@ class NewSubjectWindow(QWidget):
                 self.yearInput.setValue(3)
                 self.creditsInput.setValue(0)
         else:
-            self.semesterInput.setValue(1)  # Imposta il semestre di default a 1
-            self.yearInput.setValue(3)  # Imposta l'anno di default a quello corrente
+            # Default values for new subjects
+            self.semesterInput.setValue(1)
+            self.yearInput.setValue(3)
             self.creditsInput.setValue(0)
-
 
         self.layout.addWidget(self.title)
         self.layout.addWidget(self.nameSubject)
@@ -85,17 +103,22 @@ class NewSubjectWindow(QWidget):
         self.layout.addWidget(self.notesInput)
         self.layout.addWidget(self.saveButton)
 
-        self.setWindowTitle("Aggiungi Materia")
-        self.setMinimumSize(400, 100)  # Imposta una dimensione minima per la finestra
+        self.setWindowTitle("Gestione Materia")
+        self.setMinimumSize(400, 300)
 
     def save_subject(self):
+        """Gathers input data and calls the viewmodel to save or update the subject."""
         name = self.nameInput.text()
         semester = self.semesterInput.value()
         year = self.yearInput.value()
         credits = self.creditsInput.value()
         notes = self.notesInput.text()
+        
+        if not name.strip():
+            # Basic validation: name is required
+            return
+
         try:
-            # delegate to viewmodel (which will emit subjects_changed)
             if self.viewmodel is not None:
                 if self.is_editing:
                     # update requires an identifier; try using stored id first
@@ -108,11 +131,11 @@ class NewSubjectWindow(QWidget):
                         except Exception:
                             subj_id = None
                     if subj_id is None:
-                        # if we still don't have an id, raise so user knows
                         raise ValueError("Cannot determine subject ID for update")
                     self.viewmodel.update_subject(subj_id, name, semester, year, credits, notes)
                 else:
                     self.viewmodel.add_subject(name, semester, year, credits, notes)
             self.close()
         except Exception as e:
+            # Error handling could be improved with a message box
             print(f"Error saving subject: {e}")
