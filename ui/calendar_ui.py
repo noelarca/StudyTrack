@@ -1,15 +1,16 @@
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QCalendarWidget, QSplitter
+    QWidget, QHBoxLayout, QSplitter
 )
 from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QTextCharFormat, QColor, QBrush
 from ui.components.day_details_widget import DayDetailsWidget
+from ui.components.custom_calendar import CustomCalendar
 
 class CalendarUI(QWidget):
     """
-    UI component for visualizing study sessions on a calendar.
+    UI component for visualizing study sessions and tasks on a custom heatmap calendar.
     Features:
-    - Heat-map style intensity indicators (background colors) based on study hours.
+    - Heat-map style intensity indicators based on study hours.
+    - Priority dots for tasks due on specific dates.
     - Day-by-day details panel showing sessions for the selected date.
     """
     def __init__(self, viewmodel):
@@ -22,31 +23,24 @@ class CalendarUI(QWidget):
         super().__init__()
         self.viewmodel = viewmodel
         
-        # Colors for intensity levels (inspired by GitHub contributions)
-        self.intensity_colors = [
-            QColor("#9be9a8"), # Low intensity (< 2 hours)
-            QColor("#40c463"), # Medium-Low intensity (< 4 hours)
-            QColor("#30a14e"), # Medium-High intensity (< 6 hours)
-            QColor("#216e39")  # High intensity (> 6 hours)
-        ]
-        
         self.setup_ui()
         
-        # Auto-refresh calendar when new entries are added/modified
+        # Auto-refresh calendar when new entries or tasks are modified
         if self.viewmodel:
             self.viewmodel.entries_changed.connect(self.refresh_calendar)
+            self.viewmodel.tasks_changed.connect(self.refresh_calendar)
 
     def setup_ui(self):
-        """Sets up the layout, calendar, and details panel."""
+        """Sets up the layout, custom calendar, and details panel."""
         main_layout = QHBoxLayout(self)
         
         # Splitter allows resizing between the calendar and details view
         splitter = QSplitter(Qt.Horizontal)
         
-        # --- LEFT SIDE: THE CALENDAR ---
-        self.calendar = QCalendarWidget()
-        self.calendar.setGridVisible(True)
-        self.calendar.selectionChanged.connect(self.on_date_selected)
+        # --- LEFT SIDE: THE CUSTOM CALENDAR ---
+        self.calendar = CustomCalendar()
+        self.calendar.dateSelected.connect(self.on_date_selected)
+        self.calendar.calendarRendered.connect(self.refresh_calendar)
         
         # --- RIGHT SIDE: DETAILS PANEL ---
         # Displays session info for the date selected on the calendar.
@@ -61,58 +55,47 @@ class CalendarUI(QWidget):
         
         # Initial load of data
         self.refresh_calendar()
-        self.on_date_selected() # Show details for today by default
-
-    def get_format_for_hours(self, hours):
-        """
-        Determines the visual format (color, bold) for a specific day based on study hours.
-        
-        Args:
-            hours (float): Total study hours for the day.
-            
-        Returns:
-            QTextCharFormat: The formatting to apply to the calendar cell.
-        """
-        fmt = QTextCharFormat()
-        fmt.setFontWeight(700) # Make study days bold
-        
-        if hours == 0:
-            return fmt # Return default format for days with no study
-            
-        # Determine color based on intensity
-        color = self.intensity_colors[0]
-        if hours >= 6:
-            color = self.intensity_colors[3]
-        elif hours >= 4:
-            color = self.intensity_colors[2]
-        elif hours >= 2:
-            color = self.intensity_colors[1]
-            
-        fmt.setBackground(QBrush(color))
-        
-        # Adjust text color for readability against dark backgrounds
-        if hours >= 4:
-            fmt.setForeground(QBrush(Qt.white))
-        else:
-            fmt.setForeground(QBrush(Qt.black))
-            
-        return fmt
+        self.on_date_selected(QDate.currentDate()) # Show details for today by default
 
     def refresh_calendar(self):
         """
-        Fetches daily stats from the viewmodel and updates the calendar's 
-        visual formatting for all study days.
+        Fetches daily stats and tasks from the viewmodel and updates the custom 
+        calendar's visual formatting (heatmap and priority dots).
         """
         if not self.viewmodel: return
+        
+        # Update heatmap
         stats = self.viewmodel.get_daily_stats(days=365)
-        for date_str, hours in stats:
-            qdate = QDate.fromString(date_str, "yyyy-MM-dd")
-            self.calendar.setDateTextFormat(qdate, self.get_format_for_hours(hours))
+        stats_dict = {date_str: hours for date_str, hours in stats}
+        
+        # Update tasks/priority (Mocking priority logic based on task count for now)
+        # In a real scenario, you'd fetch tasks due on each date
+        tasks = self.viewmodel.get_all_tasks()
+        task_counts = {}
+        for task in tasks:
+            # task is a tuple: (id, subject_name, title, description, due_date, priority, is_completed)
+            due_date = task[4]
+            if due_date:
+                task_counts[due_date] = task_counts.get(due_date, 0) + 1
 
-    def on_date_selected(self):
+        print(f"DEBUG: refresh_calendar - day_cells count: {len(self.calendar.day_cells)}")
+        for cell in self.calendar.day_cells:
+            try:
+                date_str = cell.date.toString("yyyy-MM-dd")
+                
+                # Set heatmap intensity
+                hours = stats_dict.get(date_str, 0)
+                cell.set_intensity(self.calendar.get_intensity_color(hours))
+                
+                # Set priority dots based on task count
+                priority = task_counts.get(date_str, 0)
+                cell.set_priority(priority)
+            except Exception as e:
+                print(f"DEBUG: Error updating cell: {e}")
+
+    def on_date_selected(self, selected_date):
         """
-        Callback triggered when a user selects a date on the calendar.
+        Callback triggered when a user selects a date on the custom calendar.
         Updates the details panel with info for that date.
         """
-        selected_date = self.calendar.selectedDate()
         self.details_widget.update_details(selected_date)

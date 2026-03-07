@@ -2,7 +2,7 @@ from PySide6.QtCharts import (
     QChart, QChartView, QLineSeries, QDateTimeAxis, QValueAxis,
     QPieSeries, QPieSlice
 )
-from PySide6.QtCore import Qt, QDateTime, QDate
+from PySide6.QtCore import Qt, QDateTime, QDate, QTime
 from PySide6.QtGui import QPainter, QColor, QPen, QFont
 
 class SubjectGraphWidget(QChartView):
@@ -64,7 +64,8 @@ class SubjectGraphWidget(QChartView):
         
         for date_str, hours in stats_data:
             qdate = QDate.fromString(date_str, "yyyy-MM-dd")
-            qdatetime = QDateTime(qdate, Qt.LocalTime)
+            # In PySide6, we use startOfDay to get a QDateTime at 00:00:00
+            qdatetime = qdate.startOfDay(Qt.LocalTime)
             msecs = qdatetime.toMSecsSinceEpoch()
             
             self.series.append(msecs, hours)
@@ -105,6 +106,7 @@ class QualityPieChart(QChartView):
         self.setChart(self.chart)
         
         self.series = QPieSeries()
+        self.series.setLabelsVisible(False)
         self.chart.addSeries(self.series)
 
     def update_data(self, distribution):
@@ -131,8 +133,7 @@ class QualityPieChart(QChartView):
             label = labels.get(quality, f"Livello {quality}")
             slice = self.series.append(f"{label}", count)
             slice.setBrush(colors.get(quality, QColor("gray")))
-            slice.setLabelVisible(True)
-            slice.setLabelColor(QColor("white"))
+            slice.setLabelVisible(False)
             
         if self.series.slices():
             largest = max(self.series.slices(), key=lambda s: s.value())
