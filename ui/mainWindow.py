@@ -24,7 +24,6 @@ class MainWindow(QWidget):
         super().__init__()
         self.viewmodel = viewmodel
         self.setWindowTitle("Studio Tracker")
-        self.resize(1000, 750)
 
         # Main vertical layout
         self.main_layout = QVBoxLayout(self)

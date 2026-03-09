@@ -30,6 +30,7 @@ def main():
 
     # Create and show the Main Window, passing the viewmodel for data interaction
     window = MainWindow(viewmodel)
+    window.setMinimumSize(1100, 700)  # Set a minimum size to maintain usability
     window.show()
 
     # Start the event loop
