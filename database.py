@@ -486,3 +486,42 @@ class Database:
         cursor = self.conn.cursor()
         cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
         self.conn.commit()
+
+    def modify_task(self, task_id: int, subject_id: int, title: str, description: str, due_date: str, priority: int):
+        """
+        Updates an existing task's information.
+        
+        Args:
+            task_id (int): Task ID.
+            subject_id (int): ID of the subject.
+            title (str): New title.
+            description (str): New description.
+            due_date (str): New due date.
+            priority (int): New priority.
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE tasks 
+            SET subject_id = ?, title = ?, description = ?, due_date = ?, priority = ?
+            WHERE id = ?
+        """, (subject_id, title, description, due_date, priority, task_id))
+        self.conn.commit()
+
+    def get_task_by_id(self, task_id: int):
+        """
+        Retrieves a single task by its ID.
+        
+        Args:
+            task_id (int): ID of the task.
+            
+        Returns:
+            tuple: Task data.
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT t.id, s.name, t.title, t.description, t.due_date, t.priority, t.is_completed
+            FROM tasks t
+            JOIN subjects s ON t.subject_id = s.id
+            WHERE t.id = ?
+        """, (task_id,))
+        return cursor.fetchone()

@@ -225,12 +225,24 @@ class StudyRepository:
     def update_task_status(self, task_id: int, is_completed: bool):
         """
         Updates a task's completion status.
-        
+
         Args:
             task_id (int): Task identifier.
-            is_completed (bool): Completion status.
+            is_completed (bool): New status.
         """
         self.database.update_task_status(task_id, is_completed)
+
+    def update_task(self, task_id: int, subject_id: int, title: str, description: str, due_date: str, priority: int):
+        """
+        Updates an existing task's information.
+        """
+        self.database.modify_task(task_id, subject_id, title, description, due_date, priority)
+
+    def get_task_by_id(self, task_id: int):
+        """
+        Retrieves a single task by its ID.
+        """
+        return self.database.get_task_by_id(task_id)
 
     def delete_task(self, task_id: int):
         """

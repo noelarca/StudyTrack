@@ -484,15 +484,42 @@ class ViewModel(QObject):
     def delete_task(self, task_id):
         """
         Deletes a task.
-        
+
         Args:
             task_id (int): Task identifier.
-            
+
         Raises:
-            ValueError: If an error occurs.
+            ValueError: If the deletion fails.
         """
         try:
             self.repository.delete_task(task_id)
             self.tasks_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while deleting task: {e}")
+
+    def update_task(self, task_id, subject_name, title, description="", due_date=None, priority=2):
+        """
+        Updates an existing task.
+        """
+        try:
+            subject_id = self.repository.get_subject_id_by_name(subject_name)
+            if subject_id is None:
+                raise ValueError("Subject does not exist.")
+
+            if not title:
+                raise ValueError("Task title cannot be empty.")
+
+            self.repository.update_task(task_id, subject_id, title, description, due_date, priority)
+            self.tasks_changed.emit()
+        except Exception as e:
+            raise ValueError(f"An error occurred while updating task: {e}")
+
+    def get_task_by_id(self, task_id):
+        """
+        Retrieves a single task by its ID.
+        """
+        try:
+            return self.repository.get_task_by_id(task_id)
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching task: {e}")
+
