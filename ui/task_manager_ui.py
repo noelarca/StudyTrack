@@ -48,7 +48,6 @@ class TaskManager(QWidget):
         
         # 1. Add Task Section (Form to create new tasks)
         self.add_task_widget = AddTaskWidget(self.viewmodel, self.sidebar.current_subject, parent=self)
-        self.add_task_widget.task_added.connect(self.handle_add_task)
         content_layout.addWidget(self.add_task_widget)
         
         # 2. Header for current filter (e.g., "Tasks for Physics")
@@ -104,10 +103,6 @@ class TaskManager(QWidget):
             self.header_label.setText("Tutte le attività")
         else:
             self.header_label.setText(f"Attività per {self.current_filter}")
-        
-        # Sync the add task widget's subject selector
-        self.add_task_widget.refresh_subjects()
-        
         self.refresh_tasks()
 
     def refresh_tasks(self):

@@ -12,7 +12,7 @@ __pycache__/
 build/
 dist/
 *.egg-info/
-main.spec
+*.spec
 
 # Database (spesso è meglio non caricarlo se contiene dati di test)
 *.sqlite3
