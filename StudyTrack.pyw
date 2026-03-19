@@ -1,4 +1,5 @@
 import sys
+import os
 from PySide6.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
@@ -21,8 +22,15 @@ def main():
     apply_stylesheet(app, theme='dark_blue.xml')
 
     # Initialize data layers
+    # Ensure the database is stored in the user's AppData folder
+    appdata_path = os.path.join(os.environ['APPDATA'], 'StudyTrack')
+    if not os.path.exists(appdata_path):
+        os.makedirs(appdata_path)
+    
+    db_path = os.path.join(appdata_path, 'study_tracker.db')
+
     # Database handles SQLite connections and schema
-    database = Database()
+    database = Database(db_path)
     # Repository provides an abstraction over the database
     repository = StudyRepository(database)
     # ViewModel handles business logic and UI state/signals
