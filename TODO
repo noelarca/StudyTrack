@@ -1,2 +1,24 @@
 Fix crash on task elimination
 Note: task page is critical
+
+## Future Features
+
+### 1. Advanced Time Management (Pomodoro & Flow)
+- Pomodoro Technique Integration (configurable work/break intervals).
+- "Zen" or Focus Mode (minimalist, full-screen study view).
+
+### 2. Gamification & Motivation
+- Study Streaks (track consecutive days studied).
+- Daily/Weekly Goals (set targets for hours or tasks completed).
+
+### 3. Advanced Analytics & Insights
+- Productivity Heatmaps (visualize most productive times of day/week).
+- Subject Neglect Warnings (notify user of inactive subjects).
+
+### 4. Enhanced Task & Session Organization
+- Custom Session Tags (e.g., #reading, #review, #practice).
+- Subtasks & Checklists (break down complex tasks).
+
+### 5. Utilities
+- Data Export/Backup (export to CSV/JSON).
+- Quick Capture / Floating Widget (minimalist desktop timer/task entry).
