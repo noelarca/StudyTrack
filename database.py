@@ -1,20 +1,11 @@
 import sqlite3
+import os
+import sys
 from dataclasses import dataclass
 
 @dataclass
 class StudySession:
-    """
-    Data model for a study session entry.
-    
-    Attributes:
-        id (int | None): Unique identifier for the session, None if not yet saved to DB.
-        subject_id (int): ID of the subject this session belongs to.
-        date (str): Date of the session in YYYY-MM-DD format.
-        start_time (str): Start time in HH:MM format.
-        end_time (str): End time in HH:MM format.
-        quality (int): User-rated quality of the session (e.g., 1-5).
-        notes (str): Optional notes about the session.
-    """
+    # ... dataclass content ...
     id: int | None
     subject_id: int
     date: str
@@ -25,17 +16,7 @@ class StudySession:
 
 @dataclass
 class Subject:
-    """
-    Data model for a study subject.
-    
-    Attributes:
-        id (int | None): Unique identifier for the subject.
-        name (str): Name of the subject.
-        semester (int): Semester number.
-        year (int): Academic year.
-        credits (int): Number of credits for the subject.
-        notes (str): Optional notes about the subject.
-    """
+    # ... dataclass content ...
     id: int | None
     name: str
     semester: int
@@ -45,18 +26,7 @@ class Subject:
 
 @dataclass
 class Task:
-    """
-    Data model for a task related to a subject.
-    
-    Attributes:
-        id (int | None): Unique identifier for the task.
-        subject_id (int): ID of the subject this task belongs to.
-        title (str): Title of the task.
-        description (str): Detailed description of the task.
-        due_date (str | None): Optional due date in YYYY-MM-DD format.
-        priority (int): Task priority (1: Low, 2: Medium, 3: High).
-        is_completed (bool): Completion status of the task.
-    """
+    # ... dataclass content ...
     id: int | None
     subject_id: int
     title: str
@@ -74,12 +44,23 @@ class Database:
     def __init__(self, db_name="study_tracker.db"):
         """
         Initializes the database connection and ensures tables exist.
+        Uses an absolute path to ensure the database is always in the script's directory.
         
         Args:
             db_name (str): Path to the SQLite database file.
         """
-        self.conn = sqlite3.connect(db_name)
-        self.create_tables()
+        # Ensure the database is created in the same directory as the script
+        if not os.path.isabs(db_name):
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            db_name = os.path.join(base_dir, db_name)
+        
+        try:
+            self.conn = sqlite3.connect(db_name)
+            self.create_tables()
+        except sqlite3.OperationalError as e:
+            print(f"Errore critico del database: {e}")
+            print(f"Tentativo di apertura a: {db_name}")
+            raise
 
     def create_tables(self):
         """
@@ -505,3 +486,42 @@ class Database:
         cursor = self.conn.cursor()
         cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
         self.conn.commit()
+
+    def modify_task(self, task_id: int, subject_id: int, title: str, description: str, due_date: str, priority: int):
+        """
+        Updates an existing task's information.
+        
+        Args:
+            task_id (int): Task ID.
+            subject_id (int): ID of the subject.
+            title (str): New title.
+            description (str): New description.
+            due_date (str): New due date.
+            priority (int): New priority.
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE tasks 
+            SET subject_id = ?, title = ?, description = ?, due_date = ?, priority = ?
+            WHERE id = ?
+        """, (subject_id, title, description, due_date, priority, task_id))
+        self.conn.commit()
+
+    def get_task_by_id(self, task_id: int):
+        """
+        Retrieves a single task by its ID.
+        
+        Args:
+            task_id (int): ID of the task.
+            
+        Returns:
+            tuple: Task data.
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT t.id, s.name, t.title, t.description, t.due_date, t.priority, t.is_completed
+            FROM tasks t
+            JOIN subjects s ON t.subject_id = s.id
+            WHERE t.id = ?
+        """, (task_id,))
+        return cursor.fetchone()

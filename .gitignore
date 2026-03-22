@@ -9,6 +9,10 @@ __pycache__/
 *.pyc
 .venv/
 .env
+build/
+dist/
+*.egg-info/
+*.spec
 
 # Database (spesso è meglio non caricarlo se contiene dati di test)
 *.sqlite3
@@ -18,7 +22,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Prova
+# File di log
 prova.py
 seed_db.py
 GEMINI.md
