@@ -3,6 +3,7 @@ from ui.components.entry_widget import EntryWidgetBox, EditEntryDialog
 from ui.components.last_entries_widget import LastEntriesWidget
 from ui.components.sub_grid import SubGrid
 from ui.components.stopwatch_widget import StopwatchWidget
+from ui.components.mini_timer import MiniTimerWindow
 
 class EntryWidget(QWidget):
     """
@@ -21,6 +22,7 @@ class EntryWidget(QWidget):
         """
         super().__init__()
         self.viewmodel = viewmodel
+        self.mini_timer = None
         self.setup_ui()
 
     def setup_ui(self):
@@ -37,6 +39,10 @@ class EntryWidget(QWidget):
         self.stopwatch = StopwatchWidget()
         top_layout.addWidget(self.stopwatch)
         self.stopwatch.session_finished.connect(self.handle_session_finished)
+        
+        # Mini Mode Setup
+        self.stopwatch.mini_mode_requested.connect(self.enter_mini_mode)
+        self.stopwatch.time_changed.connect(self.update_mini_timer)
 
         # --- INPUT FORM BOX ---
         # Form for subject selection, time input, and notes.
@@ -111,3 +117,33 @@ class EntryWidget(QWidget):
                 print(f"Entry with ID {entry_id} not found.") 
         except Exception as e:
             print(f"Error handling edit entry: {e}")
+
+    def enter_mini_mode(self):
+        """Transitions the UI to a floating mini-timer."""
+        if not self.mini_timer:
+            self.mini_timer = MiniTimerWindow()
+            self.mini_timer.back_to_full_requested.connect(self.exit_mini_mode)
+            self.mini_timer.toggle_timer_requested.connect(self.stopwatch.toggle_btn.click)
+
+        # Sync initial state
+        self.mini_timer.update_status(self.stopwatch.is_running, self.stopwatch.mode)
+        self.mini_timer.update_time(self.stopwatch.time_display.text(), self.stopwatch.phase_label.text())
+        
+        # Hide main window and show mini timer
+        self.window().hide()
+        self.mini_timer.show()
+        self.mini_timer.setMinimumSize(210, 140)
+
+    def exit_mini_mode(self):
+        """Returns to the full application view."""
+        if self.mini_timer:
+            self.mini_timer.hide()
+        self.window().show()
+        self.window().raise_()
+        self.window().activateWindow()
+
+    def update_mini_timer(self, time_str, phase_str):
+        """Updates the mini timer display if it's active."""
+        if self.mini_timer and self.mini_timer.isVisible():
+            self.mini_timer.update_time(time_str, phase_str)
+            self.mini_timer.update_status(self.stopwatch.is_running, self.stopwatch.mode)

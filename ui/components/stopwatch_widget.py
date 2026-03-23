@@ -81,6 +81,8 @@ class StopwatchWidget(QWidget):
     """
     # Emits (StartTime, EndTime)
     session_finished = Signal(QTime, QTime)
+    mini_mode_requested = Signal()
+    time_changed = Signal(str, str) # (time_string, phase_string)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -135,12 +137,30 @@ class StopwatchWidget(QWidget):
         
         self.pom_label = QLabel("Pomodoro")
         self.pom_label.setStyleSheet("color: gray; border: none; font-size: 11px;")
+
+        self.mini_btn = QPushButton("🗗") # Icon-like symbol for mini mode
+        self.mini_btn.setFixedSize(24, 24)
+        self.mini_btn.setToolTip("Mini Mode")
+        self.mini_btn.setStyleSheet("""
+            QPushButton {
+                border: 1px solid gray;
+                border-radius: 5px;
+                font-size: 14px;
+                color: gray;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+                color: black;
+            }
+        """)
+        self.mini_btn.clicked.connect(self.mini_mode_requested.emit)
         
         mode_layout.addStretch()
         mode_layout.addWidget(self.sw_label)
         mode_layout.addWidget(self.mode_switch)
         mode_layout.addWidget(self.pom_label)
         mode_layout.addStretch()
+        mode_layout.addWidget(self.mini_btn)
         timer_layout.addLayout(mode_layout)
 
         timer_layout.addStretch()
@@ -260,6 +280,7 @@ class StopwatchWidget(QWidget):
                 self.toggle_btn.setText("INTERROMPI")
                 self.remaining_seconds = self.work_duration if self.pomodoro_phase == "Work" else self.break_duration
             
+            self.update_display()
             self.timer.start(1000)
         else:
             self.stop_timer(manual=True)
@@ -279,6 +300,7 @@ class StopwatchWidget(QWidget):
         self.toggle_btn.setChecked(False)
         self.toggle_btn.setText("AVVIA SESSIONE")
         
+        self.update_display()
         end_time = QTime.currentTime()
         
         if self.mode == "Stopwatch":
@@ -306,8 +328,8 @@ class StopwatchWidget(QWidget):
         
         if self.mode == "Stopwatch":
             self.elapsed_seconds = 0
-            self.time_display.setText("00:00:00")
             self.phase_label.setText("SESSIONE STANDARD")
+            self.update_display()
         else:
             self.update_pomodoro_durations()
 
@@ -344,4 +366,6 @@ class StopwatchWidget(QWidget):
         hours = secs_to_show // 3600
         mins = (secs_to_show % 3600) // 60
         secs = secs_to_show % 60
-        self.time_display.setText(f"{hours:02}:{mins:02}:{secs:02}")
+        time_str = f"{hours:02}:{mins:02}:{secs:02}"
+        self.time_display.setText(time_str)
+        self.time_changed.emit(time_str, self.phase_label.text())
