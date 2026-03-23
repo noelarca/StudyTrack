@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
-from ui.components.entry_widget import EntryWidgetBox, EditEntryDialog
-from ui.components.last_entries_widget import LastEntriesWidget
-from ui.components.sub_grid import SubGrid
-from ui.components.stopwatch_widget import StopwatchWidget
-from ui.components.mini_timer import MiniTimerWindow
+from ui.components.entry.entry_widget import EntryWidgetBox
+from ui.dialogs.edit_entry_dialog import EditEntryDialog
+from ui.components.entry.last_entries_widget import LastEntriesWidget
+from ui.components.subject.sub_grid import SubGrid
+from ui.components.entry.stopwatch_widget import StopwatchWidget
+from ui.components.entry.mini_timer import MiniTimerWindow
 
 class EntryWidget(QWidget):
     """

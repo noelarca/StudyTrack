@@ -4,7 +4,7 @@ Widgets for manual entry and modification of study sessions.
 Includes a form-based group box and a dialog wrapper for editing existing entries.
 """
 from PySide6.QtWidgets import (QComboBox, QGroupBox, QFormLayout, QTimeEdit,
-                               QDateEdit, QSpinBox, QTextEdit, QPushButton, QMessageBox, QHBoxLayout, QDialog, QVBoxLayout)
+                               QDateEdit, QSpinBox, QTextEdit, QPushButton, QMessageBox, QHBoxLayout, QVBoxLayout)
 from PySide6.QtCore import QDate, QTime, Qt
 
 class EntryWidgetBox(QGroupBox):
@@ -183,26 +183,3 @@ class EntryWidgetBox(QGroupBox):
                 
         except Exception as e:
             QMessageBox.critical(self, "Errore di salvataggio", str(e))
-
-class EditEntryDialog(QDialog):
-    """
-    A dialog wrapper for EntryWidgetBox used when editing entries from lists or calendars.
-    """
-    def __init__(self, entry_data, viewmodel, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Modifica Sessione di Studio")
-        self.setMinimumWidth(400)
-        
-        layout = QVBoxLayout(self)
-        self.entry_box = EntryWidgetBox("Modifica Dettagli", viewmodel=viewmodel)
-        self.entry_box.load_entry_for_editing(entry_data)
-        
-        layout.addWidget(self.entry_box)
-        
-        # Close the dialog if the user successfully saves (which resets the box state)
-        self.entry_box.button.clicked.connect(self.check_if_done)
-
-    def check_if_done(self):
-        """Closes the dialog only if the operation was successful (reset triggered)."""
-        if not self.entry_box.is_editing:
-            self.accept()

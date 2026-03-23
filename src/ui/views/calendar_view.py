@@ -2,8 +2,8 @@ from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QSplitter
 )
 from PySide6.QtCore import Qt, QDate
-from ui.components.day_details_widget import DayDetailsWidget
-from ui.components.custom_calendar import CustomCalendar
+from ui.components.calendar.day_details_widget import DayDetailsWidget
+from ui.components.calendar.custom_calendar import CustomCalendar
 
 class CalendarUI(QWidget):
     """

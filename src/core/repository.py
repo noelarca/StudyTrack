@@ -1,4 +1,4 @@
-from database import Database, Subject, StudySession, Task
+from core.database import Database, Subject, StudySession, Task
 
 class StudyRepository:
     """

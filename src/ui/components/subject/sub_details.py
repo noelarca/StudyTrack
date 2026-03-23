@@ -10,8 +10,8 @@ from PySide6.QtWidgets import (
     QProgressBar
 )
 from PySide6.QtCore import Qt
-from ui.components.new_sub_window import NewSubjectWindow
-from ui.components.subject_graph import SubjectGraphWidget, QualityPieChart
+from ui.dialogs.new_sub_dialog import NewSubjectWindow
+from ui.components.subject.subject_graph import SubjectGraphWidget, QualityPieChart
 
 class StatCard(QFrame):
     """

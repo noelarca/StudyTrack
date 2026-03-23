@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget
 )
-from ui.components.sub_sidebar import SubSidebar
-from ui.components.sub_details import SubDetails
+from ui.components.subject.sub_sidebar import SubSidebar
+from ui.components.subject.sub_details import SubDetails
 
 class SubManager(QWidget):
     """

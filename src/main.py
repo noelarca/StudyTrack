@@ -3,10 +3,10 @@ import os
 from PySide6.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
-from database import Database
-from repository import StudyRepository
-from viewmodel import ViewModel
-from ui.mainWindow import MainWindow
+from core.database import Database
+from core.repository import StudyRepository
+from core.viewmodel import ViewModel
+from ui.main_window import MainWindow
 
 """
 StudyTracker - Main Entry Point

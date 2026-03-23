@@ -4,9 +4,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from ui.components.task_item_widget import TaskItemWidget
-from ui.components.add_task_widget import AddTaskWidget
-from ui.components.task_sidebar import TaskSidebar
+from ui.components.task.task_item_widget import TaskItemWidget
+from ui.components.task.add_task_widget import AddTaskWidget
+from ui.components.task.task_sidebar import TaskSidebar
 
 class TaskManager(QWidget):
     """

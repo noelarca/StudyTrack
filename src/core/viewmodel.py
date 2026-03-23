@@ -1,7 +1,7 @@
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal
-from database import Subject, StudySession, Task
-from settings import SettingsManager
+from core.database import Subject, StudySession, Task
+from utils.settings import SettingsManager
 
 class ViewModel(QObject):
     """

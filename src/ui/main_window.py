@@ -3,12 +3,12 @@ from PySide6.QtWidgets import (
     QLabel, QStackedWidget, QWidget, QHBoxLayout, QVBoxLayout, QTabBar
     )
 
-from ui.sub_manager_ui import SubManager
-from ui.new_entry_ui import EntryWidget
-from ui.task_manager_ui import TaskManager
-from ui.calendar_ui import CalendarUI
-from ui.settings_ui import SettingsUI
-from ui.components.sliding_stack import SlidingStackedWidget
+from ui.views.sub_manager_view import SubManager
+from ui.views.entry_view import EntryWidget
+from ui.views.task_manager_view import TaskManager
+from ui.views.calendar_view import CalendarUI
+from ui.views.settings_view import SettingsUI
+from ui.components.common.sliding_stack import SlidingStackedWidget
 
 class MainWindow(QWidget):
     """

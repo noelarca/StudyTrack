@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QListWidget,
     QLabel, QListWidgetItem
 )
-from ui.components.new_sub_window import NewSubjectWindow
+from ui.dialogs.new_sub_dialog import NewSubjectWindow
 
 class SubSidebar(QWidget):
     """
