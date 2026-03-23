@@ -3,7 +3,7 @@
 Widget for displaying a table of the most recent study sessions.
 Includes functionality to view, edit, and delete study entries.
 """
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
     QHeaderView, QWidget, QVBoxLayout, QPushButton,
     QTableWidget, QLabel, QTableWidgetItem,
@@ -59,7 +59,7 @@ class LastEntriesWidget(QWidget):
 
         # Listen for data changes in the viewmodel
         if self.viewmodel is not None and hasattr(self.viewmodel, 'entries_changed'):    
-            self.viewmodel.entries_changed.connect(self.load_entries)
+            self.viewmodel.entries_changed.connect(self.load_entries, Qt.QueuedConnection)
 
         self.load_entries()
 

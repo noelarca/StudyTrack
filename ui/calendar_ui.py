@@ -27,8 +27,8 @@ class CalendarUI(QWidget):
         
         # Auto-refresh calendar when new entries or tasks are modified
         if self.viewmodel:
-            self.viewmodel.entries_changed.connect(self.refresh_calendar)
-            self.viewmodel.tasks_changed.connect(self.refresh_calendar)
+            self.viewmodel.entries_changed.connect(self.refresh_calendar, Qt.QueuedConnection)
+            self.viewmodel.tasks_changed.connect(self.refresh_calendar, Qt.QueuedConnection)
 
     def setup_ui(self):
         """Sets up the layout, custom calendar, and details panel."""

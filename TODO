@@ -1,6 +1,3 @@
-Fix crash on task elimination
-Note: task page is critical
-
 ## Future Features
 
 ### 1. Advanced Time Management (Pomodoro & Flow)
@@ -22,3 +19,5 @@ Note: task page is critical
 ### 5. Utilities
 - Data Export/Backup (export to CSV/JSON).
 - Quick Capture / Floating Widget (minimalist desktop timer/task entry).
+
+## Future Fixes

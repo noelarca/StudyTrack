@@ -70,7 +70,7 @@ class SubSidebar(QWidget):
         
         # Auto-refresh
         if self.viewmodel is not None and hasattr(self.viewmodel, 'subjects_changed'):
-            self.viewmodel.subjects_changed.connect(self.load_subjects)
+            self.viewmodel.subjects_changed.connect(self.load_subjects, Qt.QueuedConnection)
         
         # Add Button
         self.add_button = QPushButton("+ Aggiungi Materia")

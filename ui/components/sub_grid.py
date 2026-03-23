@@ -4,6 +4,7 @@ as selectable buttons, allowing users to interact with individual subjects.
 """
 
 import sys
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QButtonGroup, QGridLayout, QWidget, QPushButton
 
 
@@ -54,7 +55,7 @@ class SubGrid(QWidget):
         # Connect to the viewmodel's subjects_changed signal to refresh the grid automatically
         if self.viewmodel is not None and hasattr(self.viewmodel, 'subjects_changed'):
             try:
-                self.viewmodel.subjects_changed.connect(self.refresh_grid)
+                self.viewmodel.subjects_changed.connect(self.refresh_grid, Qt.QueuedConnection)
             except Exception:
                 # Signal might not be available or connection failed
                 pass

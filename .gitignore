@@ -25,4 +25,6 @@ Thumbs.db
 # File di log
 prova.py
 seed_db.py
+
+# File di lavoro AI
 GEMINI.md

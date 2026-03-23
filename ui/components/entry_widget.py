@@ -5,7 +5,7 @@ Includes a form-based group box and a dialog wrapper for editing existing entrie
 """
 from PySide6.QtWidgets import (QComboBox, QGroupBox, QFormLayout, QTimeEdit,
                                QDateEdit, QSpinBox, QTextEdit, QPushButton, QMessageBox, QHBoxLayout, QDialog, QVBoxLayout)
-from PySide6.QtCore import QDate, QTime
+from PySide6.QtCore import QDate, QTime, Qt
 
 class EntryWidgetBox(QGroupBox):
     """
@@ -35,7 +35,7 @@ class EntryWidgetBox(QGroupBox):
         # Connect to viewmodel signals for dynamic subject list updates
         if self.viewmodel is not None and hasattr(self.viewmodel, 'subjects_changed'):
             try:
-                self.viewmodel.subjects_changed.connect(self.load_subjects)
+                self.viewmodel.subjects_changed.connect(self.load_subjects, Qt.QueuedConnection)
             except Exception:
                 pass
         

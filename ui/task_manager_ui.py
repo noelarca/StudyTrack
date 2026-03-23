@@ -28,8 +28,10 @@ class TaskManager(QWidget):
         
         # Connect to viewmodel signals to auto-refresh when data changes
         if self.viewmodel:
-            self.viewmodel.tasks_changed.connect(self.refresh_tasks)
-            self.viewmodel.subjects_changed.connect(self.refresh_subjects)
+            # Use QueuedConnection to avoid crashes when the widget that triggered 
+            # the signal is destroyed during the refresh process.
+            self.viewmodel.tasks_changed.connect(self.refresh_tasks, Qt.QueuedConnection)
+            self.viewmodel.subjects_changed.connect(self.refresh_subjects, Qt.QueuedConnection)
 
     def setup_ui(self):
         """Sets up the layout, sidebar, and task list."""
@@ -110,33 +112,39 @@ class TaskManager(QWidget):
         Clears and repopulates the task list based on the current filter.
         Fetches tasks from the viewmodel and wraps them in TaskItemWidgets.
         """
-        self.tasks_list.clear()
         if not self.viewmodel:
             return
-            
-        # Fetch filtered tasks
-        if self.current_filter == "Tutte":
-            tasks = self.viewmodel.get_all_tasks()
-        else:
-            tasks = self.viewmodel.get_tasks_by_subject(self.current_filter)
-            # Normalize list for uniform processing: (id, subject_name, title, description, due_date, priority, is_completed)
-            tasks = [(t[0], self.current_filter, t[2], t[3], t[4], t[5], t[6]) for t in tasks]
 
-        # Add each task to the list widget
-        for t in tasks:
-            item = QListWidgetItem(self.tasks_list)
-            # Include subject name in title if viewing "All tasks"
-            display_title = f"[{t[1]}] {t[2]}" if self.current_filter == "Tutte" else t[2]
+        # Disable updates to prevent flicker and improve performance when adding many items
+        self.tasks_list.setUpdatesEnabled(False)
+        try:
+            self.tasks_list.clear()
             
-            widget = TaskItemWidget(
-                task_id=t[0], 
-                title=display_title, 
-                description=t[3], 
-                due_date=t[4], 
-                priority=t[5], 
-                is_completed=t[6], 
-                viewmodel=self.viewmodel
-            )
-            item.setSizeHint(widget.sizeHint())
-            self.tasks_list.addItem(item)
-            self.tasks_list.setItemWidget(item, widget)
+            # Fetch filtered tasks
+            if self.current_filter == "Tutte":
+                tasks = self.viewmodel.get_all_tasks()
+            else:
+                tasks = self.viewmodel.get_tasks_by_subject(self.current_filter)
+                # Normalize list for uniform processing: (id, subject_name, title, description, due_date, priority, is_completed)
+                tasks = [(t[0], self.current_filter, t[2], t[3], t[4], t[5], t[6]) for t in tasks]
+
+            # Add each task to the list widget
+            for t in tasks:
+                item = QListWidgetItem(self.tasks_list)
+                # Include subject name in title if viewing "All tasks"
+                display_title = f"[{t[1]}] {t[2]}" if self.current_filter == "Tutte" else t[2]
+                
+                widget = TaskItemWidget(
+                    task_id=t[0], 
+                    title=display_title, 
+                    description=t[3], 
+                    due_date=t[4], 
+                    priority=t[5], 
+                    is_completed=t[6], 
+                    viewmodel=self.viewmodel
+                )
+                item.setSizeHint(widget.sizeHint())
+                self.tasks_list.addItem(item)
+                self.tasks_list.setItemWidget(item, widget)
+        finally:
+            self.tasks_list.setUpdatesEnabled(True)
