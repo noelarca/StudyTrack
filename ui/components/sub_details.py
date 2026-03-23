@@ -20,11 +20,12 @@ class StatCard(QFrame):
     def __init__(self, title, value, color_hex="#00bcd4"):
         super().__init__()
         self.setFrameShape(QFrame.StyledPanel)
-        # Custom CSS for the card with a left colored border
+        # Custom CSS for the card with a left colored border and a subtle overall border for depth
         self.setStyleSheet(f"""
             QFrame {{
                 background-color: rgba(30, 40, 50, 0.6);
                 border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.05);
                 border-left: 5px solid {color_hex};
             }}
         """)
@@ -44,13 +45,6 @@ class StatCard(QFrame):
         
         layout.addWidget(self.title_label)
         layout.addWidget(self.value_label)
-
-        # Subtle drop shadow for depth
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(15)
-        shadow.setColor(QColor(0, 0, 0, 80))
-        shadow.setOffset(0, 4)
-        self.setGraphicsEffect(shadow)
 
     def set_value(self, value):
         self.value_label.setText(str(value))
@@ -87,6 +81,7 @@ class SubDetails(QWidget):
         
         title_info_layout = QVBoxLayout()
         self.title = QLabel("Seleziona una materia")
+        self.title.setWordWrap(True)
         self.title.setStyleSheet("color: white; font-weight: bold; font-size: 36px;")
         
         self.info_label = QLabel("")
@@ -103,10 +98,10 @@ class SubDetails(QWidget):
         self.edit_button.setCursor(Qt.PointingHandCursor)
         self.edit_button.setStyleSheet("""
             QPushButton {
-                background-color: #00bcd4; color: black; border-radius: 8px; 
+                border-radius: 8px; 
                 padding: 10px 20px; font-weight: bold; font-size: 14px;
             }
-            QPushButton:hover { background-color: #26c6da; }
+            QPushButton:hover {  }
         """)
         self.edit_button.clicked.connect(self.edit_subject)
         
@@ -175,6 +170,7 @@ class SubDetails(QWidget):
         
         self.tasks_list = QListWidget()
         self.tasks_list.setMinimumHeight(200)
+        self.tasks_list.setWordWrap(True)
         self.tasks_list.setStyleSheet("""
             QListWidget {
                 background-color: rgba(30, 40, 50, 0.4);
@@ -236,6 +232,12 @@ class SubDetails(QWidget):
             if notes:
                 info_text += f"\nNote: {notes}"
             self.info_label.setText(info_text)
+        else:
+            # Reset values if no details found (missing data case)
+            self.card_hours.set_value("0.0")
+            self.card_quality.set_value("0.0")
+            self.card_cfu.set_value("0")
+            self.info_label.setText("Nessun dettaglio disponibile")
 
         if self.viewmodel:
             stats_over_time = self.viewmodel.get_subject_stats_over_time(name, days=14)

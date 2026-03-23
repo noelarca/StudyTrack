@@ -18,9 +18,6 @@ def main():
     # Create the Qt Application
     app = QApplication(sys.argv)
 
-    # Apply qt-material theme for a modern dark look
-    apply_stylesheet(app, theme='dark_blue.xml')
-
     # Initialize data layers
     # Ensure the database is stored in the user's AppData folder
     appdata_path = os.path.join(os.environ['APPDATA'], 'StudyTrack')
@@ -35,6 +32,10 @@ def main():
     repository = StudyRepository(database)
     # ViewModel handles business logic and UI state/signals
     viewmodel = ViewModel(repository)
+
+    # Apply theme from settings
+    theme = viewmodel.get_setting("theme")
+    apply_stylesheet(app, theme=theme)
 
     # Create and show the Main Window, passing the viewmodel for data interaction
     window = MainWindow(viewmodel)

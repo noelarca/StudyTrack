@@ -1,6 +1,7 @@
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal
 from database import Subject, StudySession, Task
+from settings import SettingsManager
 
 class ViewModel(QObject):
     """
@@ -12,6 +13,7 @@ class ViewModel(QObject):
     subjects_changed = Signal()
     entries_changed = Signal()
     tasks_changed = Signal()
+    settings_changed = Signal()
 
     def __init__(self, repository):
         """
@@ -22,6 +24,14 @@ class ViewModel(QObject):
         """
         super().__init__()
         self.repository = repository
+        self.settings_manager = SettingsManager()
+
+    def get_setting(self, key):
+        return self.settings_manager.get_setting(key)
+
+    def set_setting(self, key, value):
+        self.settings_manager.set_setting(key, value)
+        self.settings_changed.emit()
 
     def add_entry(self, subject, date, start_time, end_time, notes, quality=3):
         """

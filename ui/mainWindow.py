@@ -7,6 +7,7 @@ from ui.sub_manager_ui import SubManager
 from ui.new_entry_ui import EntryWidget
 from ui.task_manager_ui import TaskManager
 from ui.calendar_ui import CalendarUI
+from ui.settings_ui import SettingsUI
 from ui.components.sliding_stack import SlidingStackedWidget
 
 class MainWindow(QWidget):
@@ -37,6 +38,7 @@ class MainWindow(QWidget):
         self.tab_bar.addTab("Gestione materie")
         self.tab_bar.addTab("Gestione attività")
         self.tab_bar.addTab("Calendario")
+        self.tab_bar.addTab("Impostazioni")
 
         # Create animated stack
         self.stack = SlidingStackedWidget()
@@ -46,12 +48,14 @@ class MainWindow(QWidget):
         self.subManagerTab = SubManager(viewmodel=self.viewmodel)
         self.taskManagerTab = TaskManager(viewmodel=self.viewmodel)
         self.calendarTab = CalendarUI(viewmodel=self.viewmodel)
+        self.settingsTab = SettingsUI(viewmodel=self.viewmodel)
 
         # Add widgets to the animated stack
         self.stack.addWidget(self.entryTab)
         self.stack.addWidget(self.subManagerTab)
         self.stack.addWidget(self.taskManagerTab)
         self.stack.addWidget(self.calendarTab)
+        self.stack.addWidget(self.settingsTab)
 
         # Connect tab bar change signal to the stack's animation method
         self.tab_bar.currentChanged.connect(self.stack.slide_to_index)

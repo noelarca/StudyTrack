@@ -5,7 +5,7 @@ Handles input validation and interaction with the ViewModel for data persistence
 """
 from PySide6.QtWidgets import (
     QLabel, QLineEdit, QSpinBox, QWidget, QVBoxLayout, 
-    QHBoxLayout, QPushButton, QListWidget
+    QHBoxLayout, QPushButton, QListWidget, QTextEdit
 )
 from PySide6.QtCore import QDate, Signal
 
@@ -63,7 +63,9 @@ class NewSubjectWindow(QWidget):
         self.creditsInput.setRange(0, 60)  # Typical range of exam credits
 
         self.notesSubject = QLabel("Note:")
-        self.notesInput = QLineEdit()
+        self.notesInput = QTextEdit()
+        self.notesInput.setPlaceholderText("Inserisci qui eventuali note...")
+        self.notesInput.setMaximumHeight(100)
 
         self.saveButton = QPushButton("Salva")
         self.saveButton.clicked.connect(self.save_subject)
@@ -77,7 +79,7 @@ class NewSubjectWindow(QWidget):
                 self.semesterInput.setValue(self.subject.get("semester", 1))
                 self.yearInput.setValue(self.subject.get("year", 3))
                 self.creditsInput.setValue(self.subject.get("credits", 0))
-                self.notesInput.setText(self.subject.get("notes", ""))
+                self.notesInput.setPlainText(self.subject.get("notes", ""))
             else:
                 # only have a name; set it and leave the rest defaults
                 self.nameInput.setText(str(self.subject))
@@ -112,7 +114,7 @@ class NewSubjectWindow(QWidget):
         semester = self.semesterInput.value()
         year = self.yearInput.value()
         credits = self.creditsInput.value()
-        notes = self.notesInput.text()
+        notes = self.notesInput.toPlainText()
         
         if not name.strip():
             # Basic validation: name is required

@@ -53,11 +53,8 @@ class SubSidebar(QWidget):
                 margin-bottom: 4px;
             }
             QListWidget::item:hover {
-                background-color: rgba(255, 255, 255, 0.05);
             }
             QListWidget::item:selected {
-                background-color: rgba(0, 188, 212, 0.2);
-                color: #00bcd4;
                 font-weight: bold;
             }
         """)
@@ -77,16 +74,12 @@ class SubSidebar(QWidget):
         self.add_button.setCursor(Qt.PointingHandCursor)
         self.add_button.setStyleSheet("""
             QPushButton {
-                background-color: rgba(0, 188, 212, 0.1);
-                color: #00bcd4;
-                border: 1px dashed #00bcd4;
+                border: 2px dashed #000000;
                 border-radius: 8px;
                 padding: 10px;
                 font-weight: bold;
             }
-            QPushButton:hover {
-                background-color: rgba(0, 188, 212, 0.2);
-            }
+                
         """)
         self.add_button.clicked.connect(self.addsubject)
 
