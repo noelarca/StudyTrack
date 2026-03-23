@@ -364,6 +364,38 @@ class ViewModel(QObject):
         except Exception as e:
             raise ValueError(f"An error occurred while fetching stats: {e}")
 
+    def get_subject_streak(self, name: str):
+        """
+        Retrieves the current study streak for a subject.
+        """
+        try:
+            return self.repository.get_subject_streak(name)
+        except Exception as e:
+            print(f"Error fetching streak: {e}")
+            return 0
+
+    def get_subject_progress(self, name: str):
+        """
+        Calculates study progress percentage based on CFU * 15 target.
+        """
+        try:
+            details = self.get_subject_details(name)
+            if not details:
+                return 0, 0
+            
+            total_hours = details.get("total_hours", 0)
+            credits = details.get("credits", 0)
+            target_hours = credits * 15
+            
+            if target_hours == 0:
+                return 100, 0 # No target, assume "done"
+            
+            progress = (total_hours / target_hours) * 100
+            return min(progress, 100), target_hours
+        except Exception as e:
+            print(f"Error calculating progress: {e}")
+            return 0, 0
+
     def get_daily_stats(self, days=365):
         """
         Retrieves aggregated daily study stats for all subjects.

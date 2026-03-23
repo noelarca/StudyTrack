@@ -245,6 +245,62 @@ class Database:
         """, (name,))
         return cursor.fetchone()
     
+    def get_subject_streak(self, name: str) -> int:
+        """
+        Calculates the current study streak (consecutive days) for a subject.
+        
+        Args:
+            name (str): Subject name.
+            
+        Returns:
+            int: Number of consecutive days.
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT date FROM study_sessions ss
+            JOIN subjects s ON ss.subject_id = s.id
+            WHERE s.name = ?
+            ORDER BY date DESC
+        """, (name,))
+        
+        rows = cursor.fetchall()
+        if not rows:
+            return 0
+        
+        from datetime import datetime, timedelta
+        
+        dates = [datetime.strptime(r[0], "%Y-%m-%d").date() for r in rows]
+        today = datetime.now().date()
+        
+        streak = 0
+        current_check = today
+        
+        # If the most recent study date is not today or yesterday, streak is 0
+        if dates[0] < today - timedelta(days=1):
+            return 0
+            
+        # Start from the most recent study date
+        if dates[0] == today:
+            streak = 1
+            current_check = today - timedelta(days=1)
+        elif dates[0] == today - timedelta(days=1):
+            streak = 1
+            current_check = today - timedelta(days=2)
+        else:
+            return 0
+            
+        # Check previous dates
+        for i in range(1 if dates[0] >= today - timedelta(days=1) else 0, len(dates)):
+            if dates[i] == current_check:
+                streak += 1
+                current_check -= timedelta(days=1)
+            elif dates[i] > current_check:
+                continue # Multiple sessions on same day already handled by DISTINCT
+            else:
+                break # Streak broken
+                
+        return streak
+
     def modify_subject(self, subject_id: int, name: str, semester: int, year: int, credits: int, notes: str):
         """
         Updates an existing subject's information.

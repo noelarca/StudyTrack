@@ -6,10 +6,10 @@ including statistics, associated tasks, and options to edit or delete the subjec
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, 
     QListWidget, QHBoxLayout, QPushButton,
-    QFrame, QGraphicsDropShadowEffect, QScrollArea, QSizePolicy
+    QFrame, QScrollArea,
+    QProgressBar
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont
 from ui.components.new_sub_window import NewSubjectWindow
 from ui.components.subject_graph import SubjectGraphWidget, QualityPieChart
 
@@ -131,11 +131,45 @@ class SubDetails(QWidget):
         self.card_hours = StatCard("ORE TOTALI", "0.00", "#00bcd4") # Cyan
         self.card_quality = StatCard("QUALITÀ MEDIA", "0.0", "#8bc34a") # Green
         self.card_cfu = StatCard("CFU", "0", "#ff9800") # Orange
+        self.card_streak = StatCard("STREAK", "0", "#e91e63") # Pink
         
         stats_layout.addWidget(self.card_hours)
         stats_layout.addWidget(self.card_quality)
         stats_layout.addWidget(self.card_cfu)
+        stats_layout.addWidget(self.card_streak)
         self.layout.addLayout(stats_layout)
+
+        # Progress Bar Section
+        progress_container = QFrame()
+        progress_container.setStyleSheet("background-color: rgba(30, 40, 50, 0.4); border-radius: 12px; padding: 15px;")
+        progress_layout = QVBoxLayout(progress_container)
+        
+        prog_header_layout = QHBoxLayout()
+        prog_title = QLabel("Progresso Studio (Target: CFU * 15h)")
+        prog_title.setStyleSheet("color: #b0bec5; font-size: 13px; font-weight: bold;")
+        self.prog_label = QLabel("0% (0/0h)")
+        self.prog_label.setStyleSheet("color: white; font-size: 13px; font-weight: bold;")
+        prog_header_layout.addWidget(prog_title)
+        prog_header_layout.addStretch()
+        prog_header_layout.addWidget(self.prog_label)
+        progress_layout.addLayout(prog_header_layout)
+        
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setFixedHeight(12)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: rgba(255, 255, 255, 0.05);
+                border-radius: 6px;
+                border: none;
+            }
+            QProgressBar::chunk {
+                background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00bcd4, stop:1 #8bc34a);
+                border-radius: 6px;
+            }
+        """)
+        progress_layout.addWidget(self.progress_bar)
+        self.layout.addWidget(progress_container)
 
         # Graphs Section
         graphs_layout = QHBoxLayout()
@@ -224,6 +258,15 @@ class SubDetails(QWidget):
             self.card_hours.set_value(f"{total_hours:.1f}")
             self.card_quality.set_value(f"{avg_quality:.1f}")
             self.card_cfu.set_value(str(cfu))
+            
+            # Fetch streak and progress
+            if self.viewmodel:
+                streak = self.viewmodel.get_subject_streak(name)
+                self.card_streak.set_value(f"{streak} d")
+                
+                progress_pct, target_hours = self.viewmodel.get_subject_progress(name)
+                self.progress_bar.setValue(int(progress_pct))
+                self.prog_label.setText(f"{progress_pct:.1f}% ({total_hours:.1f}/{target_hours:.1f}h)")
             
             semester = details.get("semester", "-")
             year = details.get("year", "-")

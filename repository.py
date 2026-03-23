@@ -176,6 +176,12 @@ class StudyRepository:
         """
         return self.database.get_subject_stats_over_time(name, days)
 
+    def get_subject_streak(self, name: str):
+        """
+        Retrieves the current study streak for a subject.
+        """
+        return self.database.get_subject_streak(name)
+
     def get_entries_by_date(self, date_str: str):
         """
         Retrieves all sessions for a specific date.
