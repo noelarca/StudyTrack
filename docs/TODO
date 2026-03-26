@@ -1,11 +1,16 @@
 ## Future Features
 
-### 1. Advanced Time Management (Pomodoro & Flow)
-- Pomodoro Technique Integration (configurable work/break intervals).
+### 0. QoL
+- Pause system and timer
+- Hotkeys for start pause and quality
+- Close on system tray
+- On shutdown auto save
+
+### 1. Advanced Time Management (Flow)
 - "Zen" or Focus Mode (minimalist, full-screen study view).
 
 ### 2. Gamification & Motivation
-- Study Streaks (track consecutive days studied).
+- Study Streaks (track consecutive days studied). [x]
 - Daily/Weekly Goals (set targets for hours or tasks completed).
 
 ### 3. Advanced Analytics & Insights
@@ -20,4 +25,10 @@
 - Data Export/Backup (export to CSV/JSON).
 - Quick Capture / Floating Widget (minimalist desktop timer/task entry).
 
+### 6. QoL for studying
+- Background sound effects
+
 ## Future Fixes
+
+- Trasition fullscreen - mini mode - fullscreen
+The third transition gets a stuck rendering at original size. This should be an easy fix operating on mini mode widget. Operating on returning to normal mode is suggested.

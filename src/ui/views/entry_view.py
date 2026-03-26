@@ -133,15 +133,18 @@ class EntryWidget(QWidget):
         # Hide main window and show mini timer
         self.window().hide()
         self.mini_timer.show()
-        self.mini_timer.setMinimumSize(210, 140)
 
     def exit_mini_mode(self):
-        """Returns to the full application view."""
+        """Returns to the full application view in a normal (non-fullscreen) state."""
         if self.mini_timer:
             self.mini_timer.hide()
-        self.window().show()
-        self.window().raise_()
-        self.window().activateWindow()
+        
+        main_window = self.window()
+        main_window.showNormal()  # Restore from minimized/maximized/fullscreen
+        main_window.resize(1100, 700) # Reset to minimum size
+        main_window.show()
+        main_window.raise_()
+        main_window.activateWindow()
 
     def update_mini_timer(self, time_str, phase_str):
         """Updates the mini timer display if it's active."""

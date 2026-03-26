@@ -30,8 +30,7 @@ class MiniTimerWindow(QWidget):
         self.container.setObjectName("MiniContainer")
         self.container.setStyleSheet("""
             #MiniContainer {
-                background-color: #2c3e50;
-                border: 2px solid #34495e;
+                border: 2px solid;
                 border-radius: 15px;
             }
             QLabel {
@@ -82,21 +81,18 @@ class MiniTimerWindow(QWidget):
         self.toggle_btn.setFixedHeight(25)
         self.toggle_btn.setStyleSheet("""
             QPushButton {
-                background-color: #3498db;
-                color: white;
                 border-radius: 5px;
                 font-weight: bold;
                 font-size: 11px;
             }
             QPushButton:hover {
-                background-color: #2980b9;
             }
         """)
         self.toggle_btn.clicked.connect(self.toggle_timer_requested.emit)
         container_layout.addWidget(self.toggle_btn)
 
         layout.addWidget(self.container)
-        self.setFixedSize(180, 110)
+        self.setFixedSize(210, 140)
 
     def update_time(self, time_str, phase_str):
         self.time_label.setText(time_str)
