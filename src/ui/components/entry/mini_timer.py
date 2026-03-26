@@ -94,7 +94,7 @@ class MiniTimerWindow(QWidget):
         layout.addWidget(self.container)
         self.setFixedSize(210, 140)
 
-    def update_time(self, time_str, phase_str):
+    def update_time(self, time_str, phase_str, is_running, is_paused):
         self.time_label.setText(time_str)
         # Simplify phase string for mini mode
         if "STUDIO" in phase_str.upper():
@@ -103,6 +103,16 @@ class MiniTimerWindow(QWidget):
             self.phase_label.setText("PAUSA")
         else:
             self.phase_label.setText("SESSIONE")
+
+        if is_paused:
+            self.time_label.setStyleSheet("font-size: 32px; font-weight: bold; color: #f39c12;")
+            self.toggle_btn.setText("RIPRENDI")
+        else:
+            self.time_label.setStyleSheet("font-size: 32px; font-weight: bold; color: white;")
+            if is_running:
+                self.toggle_btn.setText("PAUSA")
+            else:
+                self.toggle_btn.setText("AVVIA")
 
     def update_status(self, is_running, mode):
         if is_running:

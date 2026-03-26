@@ -81,8 +81,14 @@ class TaskItemWidget(QWidget):
             QMessageBox.critical(self, "Errore", f"Impossibile aggiornare il task: {str(e)}")
 
     def on_delete(self):
-        """Deletes the task after user clicks the delete button."""
+        """Deletes the task after user clicks the delete button and confirms."""
         try:
-            self.viewmodel.delete_task(self.task_id)
+            reply = QMessageBox.question(
+                self, "Conferma eliminazione",
+                "Sei sicuro di voler eliminare questo task?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.viewmodel.delete_task(self.task_id)
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Impossibile eliminare il task: {str(e)}")

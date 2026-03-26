@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, 
     QListWidget, QHBoxLayout, QPushButton,
     QFrame, QScrollArea,
-    QProgressBar
+    QProgressBar, QMessageBox
 )
 from PySide6.QtCore import Qt
 from ui.dialogs.new_sub_dialog import NewSubjectWindow
@@ -320,4 +320,13 @@ class SubDetails(QWidget):
         name = self.current_subject.get("name") if isinstance(self.current_subject, dict) else self.current_subject
         subject_id = self.viewmodel.get_subject_id_by_name(name)
         if subject_id:
-            self.viewmodel.delete_subject(subject_id)
+            reply = QMessageBox.question(
+                self, "Conferma eliminazione",
+                f"Sei sicuro di voler eliminare la materia '{name}'? Tutti i dati associati verranno rimossi permanentemente.",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                try:
+                    self.viewmodel.delete_subject(subject_id)
+                except Exception as e:
+                    QMessageBox.critical(self, "Errore", f"Impossibile eliminare la materia: {str(e)}")

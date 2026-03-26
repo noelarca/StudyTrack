@@ -1,10 +1,10 @@
 ## Future Features
 
 ### 0. QoL
-[ ] Pause system and timer
-[ ] Hotkeys for start pause and quality
+[x] Pause system and timer
+[x] Hotkeys for start pause and quality
 [ ] Close on system tray
-[ ] On shutdown auto save
+[x] On shutdown auto save
 
 ### 1. Advanced Time Management (Flow)
 [ ] "Zen" or Focus Mode (minimalist, full-screen study view).
@@ -28,7 +28,10 @@
 ### 6. QoL for studying
 [ ] Background sound effects
 
+### 7. Calendar adjustements
+[ ] Day overview
+
 ## Future Fixes
 
-[ ] Trasition fullscreen - mini mode - fullscreen
+[/] Trasition fullscreen - mini mode - fullscreen
 The third transition gets a stuck rendering at original size. This should be an easy fix operating on mini mode widget. Operating on returning to normal mode is suggested.

@@ -1,7 +1,9 @@
+
 import sys
 from PySide6.QtWidgets import (
     QLabel, QStackedWidget, QWidget, QHBoxLayout, QVBoxLayout, QTabBar
     )
+from utils.hotkeys import HotkeyManager
 
 from ui.views.sub_manager_view import SubManager
 from ui.views.entry_view import EntryWidget
@@ -63,3 +65,15 @@ class MainWindow(QWidget):
         # Add to main layout
         self.main_layout.addWidget(self.tab_bar)
         self.main_layout.addWidget(self.stack)
+
+        # Setup Shortcuts using the manager
+        HotkeyManager.setup_main_navigation(self)
+
+    def closeEvent(self, event):
+        """
+        Handles the application closure event.
+        Ensures that any ongoing study session is saved before the window closes.
+        """
+        # Tell the entry tab to finalize and save any active session
+        self.entryTab.save_ongoing_session()
+        event.accept()

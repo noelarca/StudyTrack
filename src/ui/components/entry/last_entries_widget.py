@@ -7,7 +7,7 @@ from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
     QHeaderView, QWidget, QVBoxLayout, QPushButton,
     QTableWidget, QLabel, QTableWidgetItem,
-    QHBoxLayout, QApplication, QStyle
+    QHBoxLayout, QApplication, QStyle, QMessageBox
 )
 
 class LastEntriesWidget(QWidget):
@@ -116,10 +116,19 @@ class LastEntriesWidget(QWidget):
             self.table.setCellWidget(i, 5, buttons_widget) 
 
     def delete_entry(self, entry_id):
-        """Delegates entry deletion to the viewmodel."""
+        """Delegates entry deletion to the viewmodel after user confirmation."""
         if self.viewmodel is not None:
-            self.viewmodel.delete_entry(entry_id)
-            # Table will be refreshed automatically if entries_changed is connected
+            reply = QMessageBox.question(
+                self, "Conferma eliminazione",
+                "Sei sicuro di voler eliminare questa sessione di studio?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                try:
+                    self.viewmodel.delete_entry(entry_id)
+                except Exception as e:
+                    QMessageBox.critical(self, "Errore", f"Impossibile eliminare la sessione: {str(e)}")
+                # Table will be refreshed automatically if entries_changed is connected
     
     def edit_entry(self, entry_id):
         """Emits signal to request editing of a specific entry."""

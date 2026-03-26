@@ -5,6 +5,7 @@ from ui.components.entry.last_entries_widget import LastEntriesWidget
 from ui.components.subject.sub_grid import SubGrid
 from ui.components.entry.stopwatch_widget import StopwatchWidget
 from ui.components.entry.mini_timer import MiniTimerWindow
+from utils.hotkeys import HotkeyManager
 
 class EntryWidget(QWidget):
     """
@@ -51,6 +52,12 @@ class EntryWidget(QWidget):
         self.study_entry_box.setMinimumWidth(300)
         self.study_entry_box.setMaximumWidth(400)
         top_layout.addWidget(self.study_entry_box)
+
+        # Setup Timer Shortcuts
+        HotkeyManager.setup_timer_shortcuts(self, self.stopwatch)
+        
+        # Setup Form Shortcuts (Alt+1 to Alt+5 for quality, Ctrl+S to save)
+        HotkeyManager.setup_form_shortcuts(self, self.study_entry_box)
 
         main_layout.addLayout(top_layout)
 
@@ -124,15 +131,29 @@ class EntryWidget(QWidget):
         if not self.mini_timer:
             self.mini_timer = MiniTimerWindow()
             self.mini_timer.back_to_full_requested.connect(self.exit_mini_mode)
-            self.mini_timer.toggle_timer_requested.connect(self.stopwatch.toggle_btn.click)
+            self.mini_timer.toggle_timer_requested.connect(self.handle_mini_toggle)
 
         # Sync initial state
         self.mini_timer.update_status(self.stopwatch.is_running, self.stopwatch.mode)
-        self.mini_timer.update_time(self.stopwatch.time_display.text(), self.stopwatch.phase_label.text())
+        self.mini_timer.update_time(
+            self.stopwatch.time_display.text(), 
+            self.stopwatch.phase_label.text(),
+            self.stopwatch.is_running,
+            self.stopwatch.is_paused
+        )
         
         # Hide main window and show mini timer
         self.window().hide()
         self.mini_timer.show()
+
+    def handle_mini_toggle(self):
+        """Handles toggle requests from mini mode, accounting for pause/resume."""
+        if self.stopwatch.is_running or self.stopwatch.is_paused:
+            # If running or paused, the mini button should toggle pause
+            self.stopwatch.pause_btn.click()
+        else:
+            # If stopped, start the timer
+            self.stopwatch.toggle_btn.click()
 
     def exit_mini_mode(self):
         """Returns to the full application view in a normal (non-fullscreen) state."""
@@ -146,8 +167,24 @@ class EntryWidget(QWidget):
         main_window.raise_()
         main_window.activateWindow()
 
-    def update_mini_timer(self, time_str, phase_str):
+    def update_mini_timer(self, time_str, phase_str, is_running, is_paused):
         """Updates the mini timer display if it's active."""
         if self.mini_timer and self.mini_timer.isVisible():
-            self.mini_timer.update_time(time_str, phase_str)
-            self.mini_timer.update_status(self.stopwatch.is_running, self.stopwatch.mode)
+            self.mini_timer.update_time(time_str, phase_str, is_running, is_paused)
+            self.mini_timer.update_status(is_running, self.stopwatch.mode)
+
+    def save_ongoing_session(self):
+        """
+        Finalizes and saves the current study session if the timer is active.
+        This is called automatically when the application shuts down.
+        """
+        if self.stopwatch.is_running:
+            # Check if a subject is selected before stopping, to avoid showing 
+            # a blocking warning dialog during shutdown if no subject is set.
+            subject = self.study_entry_box.subject_selector.currentText()
+            if subject == "-- Nessuna materia --":
+                return
+            
+            # Stopping the timer will emit session_finished, 
+            # which is connected to handle_session_finished and saves the data.
+            self.stopwatch.stop_timer(manual=True)

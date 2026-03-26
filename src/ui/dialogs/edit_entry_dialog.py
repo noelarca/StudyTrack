@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout
 from ui.components.entry.entry_widget import EntryWidgetBox
+from utils.hotkeys import HotkeyManager
 
 class EditEntryDialog(QDialog):
     """
@@ -16,6 +17,9 @@ class EditEntryDialog(QDialog):
         self.entry_box.load_entry_for_editing(entry_data)
         
         layout.addWidget(self.entry_box)
+        
+        # Setup Form Shortcuts (Alt+1 to Alt+5 for quality, Ctrl+S to save)
+        HotkeyManager.setup_form_shortcuts(self, self.entry_box)
         
         # Close the dialog if the user successfully saves (which resets the box state)
         self.entry_box.button.clicked.connect(self.check_if_done)
