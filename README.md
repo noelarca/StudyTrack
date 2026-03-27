@@ -1,5 +1,5 @@
 # StudyTrack
-A simple study tracker, with (in future) some stat functionality
+A simple but powerful study tracker, with some stat functionality
 
 # Installation (For Users)
 
@@ -46,7 +46,7 @@ pip install -r requirements.txt
 
 ### 5. Run the application:
 ```powershell
-python StudyTrack.pyw
+python main.py
 ```
 
 ## Building the Executable
