@@ -67,3 +67,9 @@ This project utilizes the following libraries:
 
 - PySide6: Released under the GNU LGPL v3 license (https://www.gnu.org/licenses/lgpl-3.0.html).
 - SQLite: Released into the Public Domain.
+
+# Supporting
+
+If this project helped you managing better your time, consider supporting its development! Your contribution helps me keeping the tool updated and continuing my studies.
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Donate-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/noelarca)
