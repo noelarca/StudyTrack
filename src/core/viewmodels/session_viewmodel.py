@@ -89,7 +89,7 @@ class SessionViewModel(BaseViewModel):
             if not subject_id:
                  raise ValueError("Subject does not exist.")
 
-            self.repository.sessions.modify_entry(entry_id, subject_id, entry_date, start_time, end_time, notes, quality)
+            self.repository.modify_entry(entry_id, subject_id, entry_date, start_time, end_time, notes, quality)
             self.entries_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred: {e}")

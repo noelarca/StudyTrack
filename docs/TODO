@@ -3,7 +3,7 @@
 ### 0. QoL
 [x] Pause system and timer
 [x] Hotkeys for start pause and quality
-[ ] Close on system tray
+[x] Close on system tray
 [x] On shutdown auto save
 [ ] Landing page. and better statistics
 
@@ -34,5 +34,5 @@
 
 ## Future Fixes
 
-[/] Trasition fullscreen - mini mode - fullscreen
+[x] Trasition fullscreen - mini mode - fullscreen
 The third transition gets a stuck rendering at original size. This should be an easy fix operating on mini mode widget. Operating on returning to normal mode is suggested.

@@ -72,28 +72,10 @@ class TaskManager(QWidget):
         self.refresh_subjects()
         self.refresh_tasks()
 
-    def handle_add_task(self, subject, title, description, due_date, priority):
-        """
-        Handles the logic for adding a new task, ensuring a subject is selected.
-        
-        Args:
-            subject (str): Selected subject name.
-            title (str): Task title.
-            description (str): Task description.
-            due_date (str): Due date.
-            priority (int): Priority level.
-        """
-        if subject == "Tutte":
-            # If "All" is selected, try to pick the first available subject
-            if self.sidebar.count() > 1:
-                subject = self.sidebar.item_text(1)
-            else:
-                raise Exception("Aggiungi prima una materia.")
-        self.viewmodel.add_task(subject, title, description, due_date, priority)
-
     def refresh_subjects(self):
-        """Refreshes the sidebar subject list."""
+        """Refreshes the sidebar and add task widget subject list."""
         self.current_filter = self.sidebar.refresh_subjects(self.current_filter)
+        self.add_task_widget.refresh_subjects()
 
     def on_subject_selected(self, subject_name):
         """
@@ -105,6 +87,7 @@ class TaskManager(QWidget):
             self.header_label.setText("Tutte le attività")
         else:
             self.header_label.setText(f"Attività per {self.current_filter}")
+            self.add_task_widget.set_current_subject(subject_name)
         self.refresh_tasks()
 
     def refresh_tasks(self):

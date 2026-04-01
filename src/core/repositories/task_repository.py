@@ -22,25 +22,16 @@ class TaskRepository:
         self.database.conn.commit()
         return cursor.lastrowid
 
-    def get_tasks_by_subject(self, subject_id: int) -> list[Task]:
+    def get_tasks_by_subject(self, subject_id: int) -> list[tuple]:
         cursor = self.database.conn.cursor()
         cursor.execute("""
-            SELECT id, subject_id, title, description, due_date, priority, is_completed
-            FROM tasks WHERE subject_id = ?
-            ORDER BY priority DESC, due_date ASC
+            SELECT t.id, s.name, t.title, t.description, t.due_date, t.priority, t.is_completed
+            FROM tasks t
+            JOIN subjects s ON t.subject_id = s.id
+            WHERE t.subject_id = ?
+            ORDER BY t.priority DESC, t.due_date ASC
         """, (subject_id,))
-        rows = cursor.fetchall()
-        return [
-            Task(
-                row[0], 
-                row[1], 
-                row[2], 
-                row[3], 
-                date.fromisoformat(row[4]) if row[4] else None, 
-                row[5], 
-                bool(row[6])
-            ) for row in rows
-        ]
+        return cursor.fetchall()
 
     def get_all_tasks(self) -> list[tuple]:
         cursor = self.database.conn.cursor()
@@ -64,7 +55,7 @@ class TaskRepository:
         cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
         self.database.conn.commit()
 
-    def modify_task(self, task_id: int, subject_id: int, title: str, description: str, due_date: date, priority: int):
+    def update_task(self, task_id: int, subject_id: int, title: str, description: str, due_date: date, priority: int):
         cursor = self.database.conn.cursor()
         cursor.execute("""
             UPDATE tasks 

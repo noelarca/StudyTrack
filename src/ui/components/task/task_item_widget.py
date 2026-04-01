@@ -5,6 +5,7 @@ Displays task details (title, description, priority, due date) and allows comple
 """
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QMessageBox
 from PySide6.QtCore import Qt
+from ui.dialogs.edit_task_dialog import EditTaskDialog
 
 class TaskItemWidget(QWidget):
     """
@@ -22,7 +23,7 @@ class TaskItemWidget(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         
-        # Top Row: Checkbox, Title, Priority label, and Delete button
+        # Top Row: Checkbox, Title, Priority label, Edit button, and Delete button
         top_layout = QHBoxLayout()
         self.checkbox = QCheckBox()
         self.checkbox.setChecked(bool(is_completed))
@@ -40,13 +41,18 @@ class TaskItemWidget(QWidget):
         self.priority_label = QLabel(f"Prio: {priority_map.get(priority, 'N/A')}")
         self.priority_label.setStyleSheet(f"color: {priority_colors.get(priority, 'black')}; font-size: 10px;")
         
+        self.edit_btn = QPushButton("Modifica")
+        self.edit_btn.setFixedSize(100, 30)
+        self.edit_btn.clicked.connect(self.on_edit)
+        
         self.delete_btn = QPushButton("Elimina")
-        self.delete_btn.setFixedWidth(60)
+        self.delete_btn.setFixedSize(100, 30)
         self.delete_btn.clicked.connect(self.on_delete)
         
         top_layout.addWidget(self.checkbox)
         top_layout.addWidget(self.label, 1)
         top_layout.addWidget(self.priority_label)
+        top_layout.addWidget(self.edit_btn)
         top_layout.addWidget(self.delete_btn)
         main_layout.addLayout(top_layout)
         
@@ -79,6 +85,19 @@ class TaskItemWidget(QWidget):
                 self.label.setStyleSheet("font-weight: bold;")
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Impossibile aggiornare il task: {str(e)}")
+
+    def on_edit(self):
+        """Opens the EditTaskDialog and refreshes the task list if changes were saved."""
+        try:
+            task_data = self.viewmodel.get_task_by_id(self.task_id)
+            if task_data:
+                dialog = EditTaskDialog(task_data, self.viewmodel, self)
+                if dialog.exec() == EditTaskDialog.Accepted:
+                    # The viewmodel already emitted tasks_changed, 
+                    # which triggers a refresh in the parent view.
+                    pass
+        except Exception as e:
+            QMessageBox.critical(self, "Errore", f"Impossibile modificare il task: {str(e)}")
 
     def on_delete(self):
         """Deletes the task after user clicks the delete button and confirms."""

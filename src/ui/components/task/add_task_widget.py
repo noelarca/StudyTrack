@@ -37,13 +37,18 @@ class AddTaskWidget(QWidget):
         title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
         add_layout.addWidget(title_label)
         
-        # Row 1: Title input and Add button
+        # Row 1: Subject selection and Title input
         row1 = QHBoxLayout()
+        row1.addWidget(QLabel("Materia:"))
+        self.subject_combo = QComboBox()
+        row1.addWidget(self.subject_combo, 1)
+        
         self.task_input = QLineEdit()
         self.task_input.setPlaceholderText("Titolo attività...")
+        row1.addWidget(self.task_input, 2)
+        
         self.add_btn = QPushButton("Aggiungi")
         self.add_btn.clicked.connect(self.add_task)
-        row1.addWidget(self.task_input, 1)
         row1.addWidget(self.add_btn)
         add_layout.addLayout(row1)
         
@@ -68,11 +73,36 @@ class AddTaskWidget(QWidget):
         add_layout.addLayout(row3)
         
         layout.addWidget(add_frame)
+        
+        # Initial population
+        self.refresh_subjects()
+
+    def refresh_subjects(self):
+        """Updates the subject list in the combo box."""
+        self.subject_combo.clear()
+        if self.viewmodel:
+            subjects = self.viewmodel.get_subjects()
+            for s in subjects:
+                # s is (id, name, credits)
+                self.subject_combo.addItem(s[1])
+        
+        # Try to sync with current selection from sidebar
+        current = self.current_subject_getter()
+        if current and current != "Tutte":
+            self.set_current_subject(current)
+
+    def set_current_subject(self, subject_name):
+        """Sets the current subject in the combo box."""
+        index = self.subject_combo.findText(subject_name)
+        if index >= 0:
+            self.subject_combo.setCurrentIndex(index)
 
     def add_task(self):
-        """Validates input and delegates task creation to the parent TaskManager."""
-        subject = self.current_subject_getter()
-        # Note: If subject is "Tutte", the parent TaskManager must handle it (e.g., prompt for subject)
+        """Validates input and creates a new task through the viewmodel."""
+        subject = self.subject_combo.currentText()
+        if not subject:
+            QMessageBox.warning(self, "Attenzione", "Seleziona una materia prima di aggiungere un'attività.")
+            return
         
         title = self.task_input.text().strip()
         if not title:
@@ -84,17 +114,12 @@ class AddTaskWidget(QWidget):
         priority = self.priority_combo.currentIndex() + 1 # 1: Low, 2: Med, 3: High
             
         try:
-            # Calls handle_add_task on the parent widget (TaskManagerUI)
-            if hasattr(self.parent(), 'handle_add_task'):
-                self.parent().handle_add_task(subject, title, description, due_date, priority)
-                
-                # Reset form on success
-                self.task_input.clear()
-                self.desc_input.clear()
-                self.date_input.setDate(QDate.currentDate())
-                self.priority_combo.setCurrentIndex(1)
-            else:
-                # Fallback if parent is not as expected
-                print("Error: Parent widget does not implement handle_add_task")
+            self.viewmodel.add_task(subject, title, description, due_date, priority)
+            
+            # Reset form on success
+            self.task_input.clear()
+            self.desc_input.clear()
+            self.date_input.setDate(QDate.currentDate())
+            self.priority_combo.setCurrentIndex(1)
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Impossibile aggiungere il task: {str(e)}")

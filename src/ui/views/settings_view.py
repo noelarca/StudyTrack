@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFrame
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFrame, QCheckBox
 )
 from PySide6.QtCore import Qt
 from qt_material import apply_stylesheet, list_themes
@@ -50,6 +50,24 @@ class SettingsUI(QWidget):
         theme_layout.addWidget(self.theme_selector)
 
         self.layout.addWidget(self.theme_frame)
+
+        # Behavior Section
+        self.behavior_frame = QFrame()
+        self.behavior_frame.setStyleSheet("background-color: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 20px;")
+        behavior_layout = QVBoxLayout(self.behavior_frame)
+
+        self.behavior_label = QLabel("Comportamento")
+        self.behavior_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #00bcd4;")
+        behavior_layout.addWidget(self.behavior_label)
+
+        self.tray_checkbox = QCheckBox("Riduci nella barra di sistema alla chiusura")
+        self.tray_checkbox.setStyleSheet("color: white; font-size: 14px; margin-top: 10px;")
+        self.tray_checkbox.setChecked(self.viewmodel.get_setting("close_to_tray"))
+        self.tray_checkbox.stateChanged.connect(self.toggle_tray)
+        behavior_layout.addWidget(self.tray_checkbox)
+
+        self.layout.addWidget(self.behavior_frame)
+
         self.layout.addStretch()
 
     def change_theme(self, theme_name):
@@ -58,3 +76,6 @@ class SettingsUI(QWidget):
         if app:
             apply_stylesheet(app, theme=theme_name)
             self.viewmodel.set_setting("theme", theme_name)
+
+    def toggle_tray(self, state):
+        self.viewmodel.set_setting("close_to_tray", state == Qt.Checked.value)

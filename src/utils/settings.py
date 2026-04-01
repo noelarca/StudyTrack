@@ -26,7 +26,8 @@ class SettingsManager:
 
     def get_defaults(self):
         return {
-            "theme": "dark_blue.xml"
+            "theme": "dark_blue.xml",
+            "close_to_tray": True
         }
 
     def save_settings(self):

@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from core.database import Database
 from core.models import Subject, StudySession, Task
 from core.repositories.subject_repository import SubjectRepository
@@ -54,14 +55,11 @@ class StudyRepository:
     def delete_entry(self, entry_id: int):
         self.sessions.delete_entry(entry_id)
 
-    def get_entry_by_id(self, entry_id: int) -> tuple:
+    def get_entry_by_id(self, entry_id: int) -> StudySession | None:
         return self.sessions.get_entry_by_id(entry_id)
     
-    def modify_entry(self, entry_id: int, subject: str, date: str, start_time: str, end_time: str, notes: str, quality: int):
-        subject_id = self.get_subject_id_by_name(subject)
-        if subject_id is None:
-            raise ValueError("Subject does not exist.")
-        self.sessions.modify_entry(entry_id, subject_id, date, start_time, end_time, notes, quality)
+    def modify_entry(self, entry_id: int, subject_id: int, entry_date: date, start_time: datetime, end_time: datetime, notes: str, quality: int):
+        self.sessions.modify_entry(entry_id, subject_id, entry_date, start_time, end_time, notes, quality)
 
     def get_entries_by_date(self, date_str: str):
         return self.sessions.get_entries_by_date(date_str)
@@ -82,8 +80,8 @@ class StudyRepository:
     def update_task_status(self, task_id: int, is_completed: bool):
         self.tasks.update_task_status(task_id, is_completed)
 
-    def update_task(self, task_id: int, subject_id: int, title: str, description: str, due_date: str, priority: int):
-        self.tasks.modify_task(task_id, subject_id, title, description, due_date, priority)
+    def update_task(self, task_id: int, subject_id: int, title: str, description: str, due_date: date, priority: int):
+        self.tasks.update_task(task_id, subject_id, title, description, due_date, priority)
 
     def get_task_by_id(self, task_id: int):
         return self.tasks.get_task_by_id(task_id)
