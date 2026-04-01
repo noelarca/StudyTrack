@@ -116,7 +116,7 @@ class MiniTimerWindow(QWidget):
 
     def update_status(self, is_running, mode):
         if is_running:
-            self.toggle_btn.setText("INTERROMPI" if mode == "Pomodoro" else "STOP E SALVA")
+            self.toggle_btn.setText("INTERROMPI" if mode == "Pomodoro" else "PAUSA")
             self.toggle_btn.setStyleSheet(self.toggle_btn.styleSheet().replace("#3498db", "#e74c3c").replace("#2980b9", "#c0392b"))
         else:
             self.toggle_btn.setText("AVVIA")
