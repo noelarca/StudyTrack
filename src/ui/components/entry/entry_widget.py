@@ -163,9 +163,9 @@ class EntryWidgetBox(QGroupBox):
             if not self.is_editing:
                 self.viewmodel.add_entry(
                     subject=subject,
-                    date=self.date_edit.date().toString("yyyy-MM-dd"),
-                    start_time=self.time_edit_1.time().toString("HH:mm:ss"),
-                    end_time=self.time_edit_2.time().toString("HH:mm:ss"),
+                    date_str=self.date_edit.date().toString("yyyy-MM-dd"),
+                    start_time_str=self.time_edit_1.time().toString("HH:mm:ss"),
+                    end_time_str=self.time_edit_2.time().toString("HH:mm:ss"),
                     notes=self.notes_edit.toPlainText(),
                     quality=self.selector.value()
                 )
@@ -173,9 +173,9 @@ class EntryWidgetBox(QGroupBox):
                 self.viewmodel.modify_entry(
                     entry_id=self.editing_entry_id,
                     subject=subject,
-                    date=self.date_edit.date().toString("yyyy-MM-dd"),
-                    start_time=self.time_edit_1.time().toString("HH:mm:ss"),
-                    end_time=self.time_edit_2.time().toString("HH:mm:ss"),
+                    date_str=self.date_edit.date().toString("yyyy-MM-dd"),
+                    start_time_str=self.time_edit_1.time().toString("HH:mm:ss"),
+                    end_time_str=self.time_edit_2.time().toString("HH:mm:ss"),
                     notes=self.notes_edit.toPlainText(),
                     quality=self.selector.value()
                 )

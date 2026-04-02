@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from ui.dialogs.new_sub_dialog import NewSubjectWindow
-from ui.components.subject.subject_graph import SubjectGraphWidget, QualityPieChart
+from ui.components.subject.subject_graph import SubjectGraphWidget, QualityPieChart, SubjectBarChartWidget
 
 class StatCard(QFrame):
     """
@@ -171,31 +171,21 @@ class SubDetails(QWidget):
         progress_layout.addWidget(self.progress_bar)
         self.layout.addWidget(progress_container)
 
-        # Graphs Section
-        graphs_layout = QHBoxLayout()
+        # Graphs Section - Unified Container
+        self.graphs_container = QFrame()
+        self.graphs_container.setStyleSheet("background-color: rgba(30, 40, 50, 0.4); border-radius: 12px;")
+        self.graphs_container.setFixedHeight(320)
+        graphs_layout = QHBoxLayout(self.graphs_container)
+        graphs_layout.setContentsMargins(15, 15, 15, 15)
         graphs_layout.setSpacing(20)
         
-        # Wrap graphs in styled frames to match cards
-        self.hours_graph_container = QFrame()
-        self.hours_graph_container.setStyleSheet("background-color: rgba(30, 40, 50, 0.4); border-radius: 12px;")
-        hg_layout = QVBoxLayout(self.hours_graph_container)
-        self.hours_graph = SubjectGraphWidget()
-        # self.hours_graph.setLabelVisible(False)
-        self.hours_graph_container.setFixedWidth(475)
-        self.hours_graph_container.setFixedHeight(300)
-        hg_layout.addWidget(self.hours_graph)
-        
-        self.quality_chart_container = QFrame()
-        self.quality_chart_container.setStyleSheet("background-color: rgba(30, 40, 50, 0.4); border-radius: 12px;")
-        qc_layout = QVBoxLayout(self.quality_chart_container)
+        self.hours_graph = SubjectBarChartWidget()
         self.quality_chart = QualityPieChart()
-        self.quality_chart_container.setFixedWidth(300)
-        self.quality_chart_container.setFixedHeight(300)
-        qc_layout.addWidget(self.quality_chart)
         
-        graphs_layout.addWidget(self.hours_graph_container, 3)
-        graphs_layout.addWidget(self.quality_chart_container, 2)
-        self.layout.addLayout(graphs_layout)
+        graphs_layout.addWidget(self.hours_graph, 3) # Bar chart takes more space
+        graphs_layout.addWidget(self.quality_chart, 2)
+        
+        self.layout.addWidget(self.graphs_container)
 
         # Tasks Section
         tasks_header = QLabel("Task Associate")

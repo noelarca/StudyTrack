@@ -1,9 +1,92 @@
 from PySide6.QtCharts import (
     QChart, QChartView, QLineSeries, QDateTimeAxis, QValueAxis,
-    QPieSeries, QPieSlice
+    QPieSeries, QPieSlice, QBarSeries, QBarSet, QBarCategoryAxis
 )
 from PySide6.QtCore import Qt, QDateTime, QDate, QTime
-from PySide6.QtGui import QPainter, QColor, QPen, QFont
+from PySide6.QtGui import QPainter, QColor, QPen, QFont, QCursor
+from PySide6.QtWidgets import QToolTip
+
+class SubjectBarChartWidget(QChartView):
+    """
+    A widget that displays a bar chart of study hours over time for a subject.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setRenderHint(QPainter.Antialiasing)
+        self.setStyleSheet("background: transparent;")
+        self.categories = []
+        
+        self.chart = QChart()
+        self.chart.setTheme(QChart.ChartThemeDark)
+        self.chart.setAnimationOptions(QChart.SeriesAnimations)
+        self.chart.legend().hide()
+        self.chart.setBackgroundVisible(False)
+        
+        self.setChart(self.chart)
+        
+        self.series = QBarSeries()
+        self.series.hovered.connect(self.handle_hover)
+        self.bar_set = QBarSet("Ore")
+        self.bar_set.setColor(QColor("#00bcd4"))
+        self.bar_set.setBorderColor(QColor("#00bcd4"))
+        self.series.append(self.bar_set)
+        self.chart.addSeries(self.series)
+        
+        # Axis X (Categories - Dates)
+        self.axis_x = QBarCategoryAxis()
+        self.axis_x.setLabelsVisible(False)
+        self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+        self.series.attachAxis(self.axis_x)
+        
+        # Axis Y (Hours)
+        self.axis_y = QValueAxis()
+        self.axis_y.setTitleVisible(False)
+        self.axis_y.setLabelFormat("%.1f")
+        self.axis_y.setLabelsColor(QColor("white"))
+        self.chart.addAxis(self.axis_y, Qt.AlignLeft)
+        self.series.attachAxis(self.axis_y)
+
+    def handle_hover(self, status, index, barset):
+        if status and 0 <= index < len(self.categories):
+            date_label = self.categories[index]
+            hours = barset.at(index)
+            QToolTip.showText(QCursor.pos(), f"{date_label}\n{hours:.2f} ore")
+        else:
+            QToolTip.hideText()
+
+    def update_data(self, stats_data):
+        # Clear existing bars
+        self.series.remove(self.bar_set)
+        self.bar_set = QBarSet("Ore")
+        self.bar_set.setColor(QColor("#00bcd4"))
+        self.bar_set.setBorderColor(QColor("#00bcd4"))
+        
+        self.chart.setTitle("Distribuzione Ore (Ultimi 14 giorni)")
+        
+        # Create a dictionary for easier lookup of existing data
+        data_dict = {date_str: hours for date_str, hours in stats_data}
+        
+        self.categories = []
+        max_hours = 1.0
+        
+        # Generate the last 14 days
+        today = QDate.currentDate()
+        for i in range(13, -1, -1):
+            date = today.addDays(-i)
+            date_str = date.toString("yyyy-MM-dd")
+            display_date = date.toString("dd/MM")
+            
+            hours = data_dict.get(date_str, 0.0)
+            
+            self.categories.append(display_date)
+            self.bar_set.append(hours)
+            if hours > max_hours:
+                max_hours = hours
+                
+        self.series.append(self.bar_set)
+        self.axis_x.clear()
+        self.axis_x.append(self.categories)
+        self.axis_y.setRange(0, max_hours * 1.1)
 
 class SubjectGraphWidget(QChartView):
     """
