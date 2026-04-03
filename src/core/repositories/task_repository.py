@@ -80,3 +80,14 @@ class TaskRepository:
             WHERE t.id = ?
         """, (task_id,))
         return cursor.fetchone()
+
+    def get_tasks_by_date(self, date_str: str) -> list[tuple]:
+        cursor = self.database.conn.cursor()
+        cursor.execute("""
+            SELECT t.id, s.name, t.title, t.description, t.due_date, t.priority, t.is_completed
+            FROM tasks t
+            JOIN subjects s ON t.subject_id = s.id
+            WHERE t.due_date = ?
+            ORDER BY t.is_completed ASC, t.priority DESC
+        """, (date_str,))
+        return cursor.fetchall()

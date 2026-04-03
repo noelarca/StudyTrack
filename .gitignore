@@ -22,9 +22,10 @@ dist/
 .DS_Store
 Thumbs.db
 
-# File di log
+# File di log e di test
 prova.py
 seed_db.py
+generate_huge_db.py
 
 # File di lavoro
 GEMINI.md

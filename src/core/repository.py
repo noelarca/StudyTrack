@@ -88,3 +88,6 @@ class StudyRepository:
 
     def delete_task(self, task_id: int):
         self.tasks.delete_task(task_id)
+
+    def get_tasks_by_date(self, date_str: str):
+        return self.tasks.get_tasks_by_date(date_str)

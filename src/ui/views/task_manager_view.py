@@ -28,9 +28,10 @@ class TaskManager(QWidget):
         
         # Connect to viewmodel signals to auto-refresh when data changes
         if self.viewmodel:
-            # Use QueuedConnection to avoid crashes when the widget that triggered 
-            # the signal is destroyed during the refresh process.
-            self.viewmodel.tasks_changed.connect(self.refresh_tasks, Qt.QueuedConnection)
+            # Use granular signals for better performance with many tasks
+            self.viewmodel.task_added.connect(self.on_task_added, Qt.QueuedConnection)
+            self.viewmodel.task_updated.connect(self.on_task_updated, Qt.QueuedConnection)
+            self.viewmodel.task_deleted.connect(self.on_task_deleted, Qt.QueuedConnection)
             self.viewmodel.subjects_changed.connect(self.refresh_subjects, Qt.QueuedConnection)
 
     def setup_ui(self):
@@ -106,6 +107,11 @@ class TaskManager(QWidget):
             # Fetch filtered tasks
             if self.current_filter == "Tutte":
                 tasks = self.viewmodel.get_all_tasks()
+                # If we have too many tasks, show only a subset for performance
+                # and maybe add a message or "load more" (omitted for brevity)
+                if len(tasks) > 200:
+                    self.header_label.setText(f"Tutte le attività (mostrate prime 200 di {len(tasks)})")
+                    tasks = tasks[:200]
             else:
                 tasks = self.viewmodel.get_tasks_by_subject(self.current_filter)
                 # Normalize list for uniform processing: (id, subject_name, title, description, due_date, priority, is_completed)
@@ -113,21 +119,74 @@ class TaskManager(QWidget):
 
             # Add each task to the list widget
             for t in tasks:
-                item = QListWidgetItem(self.tasks_list)
-                # Include subject name in title if viewing "All tasks"
-                display_title = f"[{t[1]}] {t[2]}" if self.current_filter == "Tutte" else t[2]
-                
-                widget = TaskItemWidget(
-                    task_id=t[0], 
-                    title=display_title, 
-                    description=t[3], 
-                    due_date=t[4], 
-                    priority=t[5], 
-                    is_completed=t[6], 
-                    viewmodel=self.viewmodel
-                )
-                item.setSizeHint(widget.sizeHint())
-                self.tasks_list.addItem(item)
-                self.tasks_list.setItemWidget(item, widget)
+                self._add_task_item(t)
         finally:
             self.tasks_list.setUpdatesEnabled(True)
+
+    def _add_task_item(self, t):
+        """Helper to create and add a single task item to the list."""
+        item = QListWidgetItem(self.tasks_list)
+        # Store task_id in UserRole for later lookup
+        item.setData(Qt.UserRole, t[0])
+        
+        # Include subject name in title if viewing "All tasks"
+        display_title = f"[{t[1]}] {t[2]}" if self.current_filter == "Tutte" else t[2]
+        
+        widget = TaskItemWidget(
+            task_id=t[0], 
+            title=display_title, 
+            description=t[3], 
+            due_date=t[4], 
+            priority=t[5], 
+            is_completed=t[6], 
+            viewmodel=self.viewmodel
+        )
+        item.setSizeHint(widget.sizeHint())
+        self.tasks_list.addItem(item)
+        self.tasks_list.setItemWidget(item, widget)
+
+    def _find_item_by_task_id(self, task_id):
+        """Finds the QListWidgetItem associated with a given task_id."""
+        for i in range(self.tasks_list.count()):
+            item = self.tasks_list.item(i)
+            if item.data(Qt.UserRole) == task_id:
+                return item, i
+        return None, -1
+
+    def on_task_added(self, task_id):
+        """Incremental update for a new task."""
+        # Only add if it matches the current filter
+        task = self.viewmodel.get_task_by_id(task_id)
+        if task:
+            if self.current_filter == "Tutte" or task[1] == self.current_filter:
+                self._add_task_item(task)
+
+    def on_task_updated(self, task_id):
+        """Incremental update for an edited task."""
+        item, index = self._find_item_by_task_id(task_id)
+        if item:
+            task = self.viewmodel.get_task_by_id(task_id)
+            if task:
+                # If it still matches filter, update it
+                if self.current_filter == "Tutte" or task[1] == self.current_filter:
+                    display_title = f"[{task[1]}] {task[2]}" if self.current_filter == "Tutte" else task[2]
+                    widget = TaskItemWidget(
+                        task_id=task[0], 
+                        title=display_title, 
+                        description=task[3], 
+                        due_date=task[4], 
+                        priority=task[5], 
+                        is_completed=task[6], 
+                        viewmodel=self.viewmodel
+                    )
+                    item.setSizeHint(widget.sizeHint())
+                    self.tasks_list.setItemWidget(item, widget)
+                else:
+                    # No longer matches filter, remove it
+                    self.tasks_list.takeItem(index)
+
+    def on_task_deleted(self, task_id):
+        """Incremental update for a deleted task."""
+        item, index = self._find_item_by_task_id(task_id)
+        if index != -1:
+            self.tasks_list.takeItem(index)

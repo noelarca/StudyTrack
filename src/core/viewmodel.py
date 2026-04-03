@@ -12,6 +12,9 @@ class ViewModel(QObject):
     subjects_changed = Signal()
     entries_changed = Signal()
     tasks_changed = Signal()
+    task_added = Signal(int)
+    task_updated = Signal(int)
+    task_deleted = Signal(int)
     settings_changed = Signal()
 
     def __init__(self, repository):
@@ -27,6 +30,9 @@ class ViewModel(QObject):
         self.subject_vm.subjects_changed.connect(self.subjects_changed.emit)
         self.session_vm.entries_changed.connect(self.entries_changed.emit)
         self.task_vm.tasks_changed.connect(self.tasks_changed.emit)
+        self.task_vm.task_added.connect(self.task_added.emit)
+        self.task_vm.task_updated.connect(self.task_updated.emit)
+        self.task_vm.task_deleted.connect(self.task_deleted.emit)
         
         # Base settings signals
         self.subject_vm.settings_changed.connect(self.settings_changed.emit)
@@ -117,3 +123,6 @@ class ViewModel(QObject):
 
     def get_task_by_id(self, task_id):
         return self.task_vm.get_task_by_id(task_id)
+
+    def get_tasks_by_date(self, date_str):
+        return self.task_vm.get_tasks_by_date(date_str)

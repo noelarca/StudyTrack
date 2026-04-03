@@ -8,6 +8,9 @@ class TaskViewModel(BaseViewModel):
     Handles all logic related to task management.
     """
     tasks_changed = Signal()
+    task_added = Signal(int)
+    task_updated = Signal(int)
+    task_deleted = Signal(int)
 
     def __init__(self, repository):
         super().__init__(repository)
@@ -32,7 +35,8 @@ class TaskViewModel(BaseViewModel):
                 due_date=due_date,
                 priority=priority
             )
-            self.repository.add_task(task)
+            task_id = self.repository.add_task(task)
+            self.task_added.emit(task_id)
             self.tasks_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while adding the task: {e}")
@@ -55,6 +59,7 @@ class TaskViewModel(BaseViewModel):
     def toggle_task_completion(self, task_id, is_completed):
         try:
             self.repository.update_task_status(task_id, is_completed)
+            self.task_updated.emit(task_id)
             self.tasks_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while updating task: {e}")
@@ -62,6 +67,7 @@ class TaskViewModel(BaseViewModel):
     def delete_task(self, task_id):
         try:
             self.repository.delete_task(task_id)
+            self.task_deleted.emit(task_id)
             self.tasks_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while deleting task: {e}")
@@ -77,6 +83,7 @@ class TaskViewModel(BaseViewModel):
             due_date = date.fromisoformat(due_date_str) if due_date_str else None
             
             self.repository.update_task(task_id, subject_id, title, description, due_date, priority)
+            self.task_updated.emit(task_id)
             self.tasks_changed.emit()
         except Exception as e:
             raise ValueError(f"An error occurred while updating task: {e}")
@@ -86,3 +93,9 @@ class TaskViewModel(BaseViewModel):
             return self.repository.get_task_by_id(task_id)
         except Exception as e:
             raise ValueError(f"An error occurred while fetching task: {e}")
+
+    def get_tasks_by_date(self, date_str: str):
+        try:
+            return self.repository.get_tasks_by_date(date_str)
+        except Exception as e:
+            raise ValueError(f"An error occurred while fetching tasks: {e}")
