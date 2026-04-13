@@ -54,7 +54,7 @@ python main.py
 To build the standalone `.exe` file yourself, run the following command in your terminal from the project root:
 
 ```powershell
-python -m PyInstaller --noconsole --onefile --windowed --name "StudyTrack" StudyTrack.pyw
+pyinstaller --onefile --windowed --name "StudyTrack" --paths "src" --collect-all "qt-material" "src/main.py"
 ```
 
 The compiled application will be located in the `dist/` directory.
